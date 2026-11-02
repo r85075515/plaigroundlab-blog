@@ -1,0 +1,177 @@
+/* tokens.css — PlAIground Lab shared design tokens (master candidate v0.3)
+   v0.3: data-component extension merged in (tables / charts / status),
+   drafted by ComputeQuote, approved by main chat after POC screenshots.
+   Source of truth: DESIGN.md in this folder + AI Geek Blog spec v1.3 §3.3–3.6.
+   Rules: reference these variables only. No raw hex, no off-scale px values
+   in page CSS. Missing token? Report the gap; do not invent a value.
+   Bilingual: default variables are zh-TW; html[lang="en"] overrides below
+   switch body size, line-height, letter-spacing and text measure for EN. */
+
+:root {
+  /* Color — 5 roles, warm-tinted neutrals (see DESIGN.md for rationale) */
+  --color-bg: #FFF9F0;
+  --color-surface: #FFFFFF;
+  --color-border: #EADFCB;
+  --color-text: #22313F;
+  --color-text-secondary: #5B6B77;
+  --color-accent: #FFC53D;        /* only: primary CTA + signature rule, <=10% */
+  --color-accent-text: #8A5A00;   /* accent as small text (contrast-safe) */
+  --color-code-bg: #FFF1DC;
+
+  /* Typography */
+  --font-sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --font-size-12: 12px;
+  --font-size-14: 14px;
+  --font-size-16: 16px;
+  --font-size-body: 17px; /* registered CJK body exception, see DESIGN.md */
+  --font-size-20: 20px;
+  --font-size-24: 24px;
+  --font-size-30: 30px;
+  --font-size-36: 36px;
+  --font-size-48: 48px;
+  --line-height-body: 1.7;        /* zh-TW body */
+  --line-height-heading: 1.35;    /* zh-TW headings: 1.3–1.4 */
+  --letter-spacing-body: 0.02em;  /* zh-TW body */
+  --letter-spacing-display: 0;    /* zh-TW large headings */
+  --letter-spacing-label: 0.08em; /* uppercase labels: 0.06–0.10em */
+
+  /* English typography (applied via html[lang="en"] override below) */
+  --font-size-body-en: 16px;
+  --line-height-body-en: 1.55;    /* EN body range: 1.5–1.6 */
+  --line-height-heading-en: 1.2;
+  --letter-spacing-body-en: 0;
+  --letter-spacing-display-en: -0.02em; /* EN headings >= 36px */
+  --container-text-max-en: 66ch;  /* EN line length ceiling */
+
+  /* Layout */
+  --container-max: 1280px;
+  --container-text-max: 800px;    /* zh-TW line length: 30–40 chars */
+  --gutter-desktop: 32px;
+  --gutter-mobile: 24px;
+
+  /* Spacing scale — the only allowed spacing values */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-48: 48px;
+  --space-64: 64px;
+  --space-96: 96px;
+  --space-128: 128px;
+  --section-padding-block: clamp(64px, 8vw, 96px);
+
+  /* Radius — bound to component type */
+  --radius-badge: 4px;
+  --radius-control: 8px;   /* buttons, inputs */
+  --radius-card: 12px;
+  --radius-large: 16px;    /* modals, large containers */
+  --radius-full: 9999px;   /* pills, avatars */
+
+  /* Shadow — 3 levels only, opacity <= .16 */
+  --shadow-sm: 0 1px 3px rgba(34, 49, 63, 0.08);
+  --shadow-md: 0 4px 12px rgba(34, 49, 63, 0.12);
+  --shadow-lg: 0 8px 24px rgba(34, 49, 63, 0.16);
+
+  /* Motion — one page moment; UI <= 300ms; transform/opacity only */
+  --motion-ui: 150ms ease-out;
+  --motion-page: 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-stagger-step: 50ms;
+
+  /* Icons — Lucide only, 1.5px stroke */
+  --icon-size-sm: 16px;
+  --icon-size-md: 20px;
+  --icon-size-lg: 24px;
+
+  /* Focus — one style site-wide */
+  --focus-ring: 2px solid var(--color-accent-text);
+  --focus-offset: 2px;
+}
+
+/* ── Data components (v0.3 extension) ──────────────────────
+   Merged from CQ draft tokens-data.css v0.1 (approved). Namespace:
+   --table-* / --chart-* / --status-*. New hex values live only in this
+   token file; page CSS still references tokens only. Rules: DESIGN.md
+   section "資料元件". */
+
+:root {
+  /* Table — 14px on the master scale; numeric columns mono + tabular-nums,
+     right-aligned; row separation is a 1px border line; sticky header. */
+  --table-font-size: var(--font-size-14);
+  --table-line-height: 1.5;
+  --table-header-bg: var(--color-code-bg); /* derived: warm tint #FFF1DC */
+  --table-header-font-size: var(--font-size-12);
+  --table-header-font-weight: var(--font-weight-medium);
+  --table-header-letter-spacing: var(--letter-spacing-label);
+  --table-header-color: var(--color-text-secondary);
+  --table-cell-padding-block: var(--space-8);
+  --table-cell-padding-inline: var(--space-12);
+  --table-row-border: 1px solid var(--color-border);
+  --table-row-hover-bg: #FAF0DA;         /* new: warm tint between bg and code-bg */
+  --table-zebra-bg: #FFFCF6;             /* new (optional): long-table zebra, warm white */
+  --table-numeric-font: var(--font-mono);
+  --table-sticky-shadow: var(--shadow-sm);
+
+  /* Chart — Okabe–Ito colorblind-friendly sequence, warm-adjusted
+     (each series color verified >= 3:1 on warm paper #FFF9F0 for
+     lines/markers). Series identity is ALWAYS shape x color dual
+     encoding: shape order circle → triangle → square → diamond →
+     cross → star → pentagon → hexagon, identical in legend swatches,
+     line markers and tooltips. */
+  --chart-1: #E69F00;  /* amber */
+  --chart-2: #0072B2;  /* blue */
+  --chart-3: #009E73;  /* teal green */
+  --chart-4: #D55E00;  /* vermillion */
+  --chart-5: #CC79A7;  /* rose */
+  --chart-6: #56B4E9;  /* sky */
+  --chart-7: #117733;  /* green */
+  --chart-8: #332288;  /* indigo */
+  --chart-9: #AA4499;  /* purple */
+  --chart-10: #882255; /* wine */
+  --chart-11: #999933; /* olive */
+  --chart-12: var(--color-text-secondary); /* derived: neutral series / reference line */
+  /* Price direction (not good/bad): always paired with ▲▼ and a sign;
+     color never carries the meaning alone. */
+  --chart-rise: #D55E00; /* = --chart-4 vermillion */
+  --chart-fall: #0072B2; /* = --chart-2 blue */
+  --chart-grid: var(--color-border);       /* derived */
+  --chart-axis-text: var(--color-text-secondary); /* derived */
+
+  /* Status — in-stock = success, stale data / supply warning = warning,
+     error / delisted = danger. Out-of-stock is NOT an error: use
+     --color-text-secondary neutral. */
+  --status-success: #1B7A43;        /* new */
+  --status-success-bg: #E7F4EC;     /* new: low-saturation green tint on warm paper */
+  --status-warning: var(--color-accent-text); /* derived: #8A5A00, contrast verified */
+  --status-warning-bg: var(--color-code-bg);  /* derived: #FFF1DC */
+  --status-danger: #B3261E;         /* new */
+  --status-danger-bg: #FBEAE8;      /* new */
+}
+
+/* Data-component language note: table/chart numerals are unaffected by
+   html[lang] (sizes are fixed compact values); axis labels and table
+   headers follow the page language. No extra CSS branching. */
+
+/* English override — same variables, EN values. Page CSS must not branch
+   on language itself; it consumes the variables only. */
+html[lang="en"] {
+  --font-size-body: var(--font-size-body-en);
+  --line-height-body: var(--line-height-body-en);
+  --line-height-heading: var(--line-height-heading-en);
+  --letter-spacing-body: var(--letter-spacing-body-en);
+  --letter-spacing-display: var(--letter-spacing-display-en);
+  --container-text-max: var(--container-text-max-en);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-ui: 0ms;
+    --motion-page: 0ms;
+    --motion-stagger-step: 0ms;
+  }
+}
