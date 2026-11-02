@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Geek Blog — PlAIground Lab</title>
+<meta name="description" content="Notes from building with AI at PlAIground Lab: a story up front, a complete runbook behind it, and an edition for your AI to read.">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <section class="hero">
+    <p class="hero-kicker">AI GEEK BLOG</p>
+    <h1 class="hero-title">Building on top of AI,<br>and writing down every pit we fell into.</h1>
+    <p class="hero-lede">Engineering notes from PlAIground Lab. Every post opens with the story — what happened and why — and closes with the complete technical runbook, written step by step so your AI can read it and build along.</p>
+  </section>
+  <section class="postlist" aria-label="Latest posts">
+    <h2 class="section-title">Latest posts</h2>
+    <article class="postcard">
+      <a class="postcard-cover" href="/en/posts/2026-11-01-webhook-outage/"><img src="/assets/covers/cover-02-incident.webp" alt="" width="2048" height="1152" loading="lazy"></a>
+      <p class="post-meta"><time datetime="2026-11-01">2026-11-01</time></p>
+      <h3 class="postcard-title"><a href="/en/posts/2026-11-01-webhook-outage/">Three Lines of Defense, All Asleep: A Webhook Outage, and How We Make Sure a Machine Notices First</a></h3>
+      <div class="rule" aria-hidden="true"></div>
+      <p class="postcard-excerpt">Receiver, canary, mailbox fallback — three lines of defense fell asleep on the same afternoon. The full story, then the fix written as a runbook you (and your AI) can follow directly.</p>
+      <a class="postcard-more" href="/en/posts/2026-11-01-webhook-outage/">Read the post →</a>
+    </article>
+  </section>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
