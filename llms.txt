@@ -1,0 +1,8 @@
+# PlAIground Lab — AI Geek Blog
+> Engineering notes on building with AI agents: story up front, complete runbook behind it.
+
+## Posts
+- [三層防線一起睡著：一次 Webhook 斷鏈事故（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-01-webhook-outage/)
+- [Three Lines of Defense, All Asleep: A Webhook Outage (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-01-webhook-outage/)
+- [Agent edition, 中文](https://blog.plaigroundlab.com/posts/2026-11-01-webhook-outage.agent.md)
+- [Agent edition, English](https://blog.plaigroundlab.com/posts/2026-11-01-webhook-outage.en.agent.md)
