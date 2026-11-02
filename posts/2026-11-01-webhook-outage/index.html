@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>三層防線一起睡著：一次 Webhook 斷鏈事故，與我們如何讓它永遠先被機器發現 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="三層防線一起睡著：一次 Webhook 斷鏈事故，與我們如何讓它永遠先被機器發現">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-01-webhook-outage/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-01-webhook-outage/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-01-webhook-outage/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-01-webhook-outage/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-01">2026-11-01</time></p>
+    <ul class="post-tags"><li>incident</li><li>agent-ops</li><li>orchestration</li><li>automation</li></ul>
+    <h1 class="post-title">三層防線一起睡著：一次 Webhook 斷鏈事故，與我們如何讓它永遠先被機器發現</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-02-incident.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著搭——<a href="/posts/2026-11-01-webhook-outage.agent.md">中文版</a>・<a href="/posts/2026-11-01-webhook-outage.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>我們有一條很重要的訊息通道：外部協作的 AI 把任務透過 webhook 送進來，我方系統收下、建檔、再喚醒巡邏程序去處理。它平常安靜地工作，一天送進來好幾件急單，我們甚至為了它把不穩定的臨時網址換成了固定網域。</p>
+<p>2026 年 11 月 1 日下午，這條通道斷了三個多小時。最諷刺的不是它斷了，而是——<strong>三層自動防線全都睡著，最後是使用者先發現的。</strong></p>
+<p>下午約 15:23 起，接收訊息的兩個程序悄悄死掉，最後一封成功收下的訊息停在 12:03。第一層防線本該是「守護程序」：它每 5 分鐘檢查一次、壞了就自動重啟整套服務。但那天它處於停用狀態，自癒根本沒有啟動——這是第一層。</p>
+<p>第二層防線是我們當天中午才剛上線的「金絲雀」：一支零成本的死腳本，每 5 分鐘走一遍完整的公開路徑送一封自我測試訊息，要求對方回覆一組隨機碼，碼對了才算真的通。它其實有在工作——它每一輪都亮紅燈，端到端測試每一輪都回 502。可是它的升級邏輯寫的是「只通報一次，之後保持安靜」，而那唯一一次通報又投遞到了錯誤的聊天室。紅燈亮了三個多小時，沒有任何人被喚醒——這是第二層。</p>
+<p>第三層防線是「備援信箱」：主通道送不進來時，送端改把訊息投進一個雲端信箱，我方每 30 秒去拉一次。這層其實救了我們——斷鏈期間的 4 封訊息一封都沒丟，全部躺在信箱裡。只是負責拉信的那個程序跟主程序一起死了，所以信躺了三個多小時，直到全棧恢復才在 18:52 被一次拉進來建檔。備援存在，但備援的搬運工也死了——這是第三層。</p>
+<p>18:38，使用者發覺「傳訊好像有問題」。我們實查後確認三層疊死，18:52 跑了一次全棧重啟，逐段驗證：本機健康檢查正常、公開健康檢查正常、經公開網址送自我測試回 200。通道恢復，信箱裡的 4 封信隨即補建完成。</p>
+<p>這篇文章的後段，是這次事故的完整 runbook：架構長什麼樣、金絲雀與守護程序怎麼設計、死段怎麼定位、修復的每一步與驗證方法，以及事後補上的三個修法——讓下一次斷鏈，先被機器發現，而且吵得醒人。</p>
+<p>一句先說在前面：<strong>監控的價值不在「有裝」，而在「壞掉的時候，它的通報本身還活著」。</strong> 通報路徑跟被監控的系統共用同一條命，是這次事故最貴的一課。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://plaigroundlab.com">ComputeQuote</a>｜<a href="https://plaigroundlab.com">Axiom</a>｜<a href="https://plaigroundlab.com">理想型</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 架構：Fleet Webhook 鏈路</h3>
+<p>送端（外部協作 AI）→ 公開端點 → 隧道層 → 接收端 → 建檔 → 喚醒巡邏。備援路徑：送端 → 雲端信箱（KV）→ 輪詢程序 → 建檔。</p>
+<table>
+<thead>
+<tr>
+<th>段</th>
+<th>元件</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>公開端點</td>
+<td>固定網域 <code>https://hook.example.com/hook</code>，POST，需帶 <code>X-Fleet-Key</code> 標頭驗證；JSON 主體上限 64KB，必填欄位 <code>text</code></td>
+</tr>
+<tr>
+<td>S2</td>
+<td>命名隧道</td>
+<td>跑在常開的家用電腦上（雲端虛擬機的出口無法承載隧道資料面，實測後改此架構），4 條 QUIC 連線</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>反向隧道</td>
+<td>虛擬機主動向家用電腦建立 SSH 反向隧道，把接收端埠映射過去：家用電腦本機 18791 → 虛擬機 127.0.0.1:8791</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>接收端 receiver</td>
+<td>Python 標準函式庫 HTTP 服務，監聽 127.0.0.1:8791；驗證通過後把任務寫入任務 repo 的 <code>tasks/pending/</code>，再以 SSH 喚醒家用電腦上的巡邏程序</td>
+</tr>
+<tr>
+<td>S5</td>
+<td>信箱輪詢 poller</td>
+<td>每 30 秒拉雲端信箱，有信則比照接收端格式建檔、刪信、留收件紀錄、喚醒巡邏，此為備援與非同步投遞路徑</td>
+</tr>
+</tbody>
+</table>
+<p>健康檢查端點：本機 <code>GET http://127.0.0.1:8791/health</code> 與公開 <code>GET https://hook.example.com/health</code>，正常回 <code>{"ok": true}</code>。</p>
+<p>接收端驗證規則（400 的四種原因，皆回傳錯誤字串）：主體大小不符、JSON 無法解析、<code>text</code> 缺失或為空、<code>task_id</code> 格式不符；另有 401（金鑰不符）與 409（重複）。排障時先看錯誤字串，不要先猜送端壞了。</p>
+<h3>2. 事故時間線（2026-11-01，America/Phoenix）</h3>
+<table>
+<thead>
+<tr>
+<th>時間</th>
+<th>事件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10-29 夜</td>
+<td>接收端建成，最初使用臨時隧道網址（重啟即變）</td>
+</tr>
+<tr>
+<td>10-30</td>
+<td>固定網域命名隧道上線（跑在家用電腦）；信箱備援路徑上線</td>
+</tr>
+<tr>
+<td>10-31 整夜</td>
+<td>接收端多次被守護程序拉起重啟，每次實查皆已自癒；守護程序「重啟後只等 3 秒就複查」追不上隧道收斂，反覆誤判失敗（計時過敏，非真故障）</td>
+</tr>
+<tr>
+<td>11-01 上午</td>
+<td>送端回報連續兩次 400：查證我方格式未變，接收端補上拒絕原因紀錄（REJECT logging，只記原因與欄位名，不記內文），探針驗證通過</td>
+</tr>
+<tr>
+<td>11-01 12:0x</td>
+<td>第一版改善完工：金絲雀上線、輪詢加指數退避、守護程序舊版停用；拉模型評估完成但未動工</td>
+</tr>
+<tr>
+<td>約 15:23</td>
+<td>接收端與輪詢程序死亡；最後一筆成功收件停在 12:03</td>
+</tr>
+<tr>
+<td>15:23–18:38</td>
+<td>金絲雀每 5 分鐘全段紅燈（端到端回 502），但升級只響一次且投遞位置錯誤，其後恆為安靜；守護程序處於停用狀態未自癒；信箱備援累積 4 封未拉</td>
+</tr>
+<tr>
+<td>18:38</td>
+<td>使用者指出傳訊有問題，團隊實查確認三層疊死</td>
+</tr>
+<tr>
+<td>18:52</td>
+<td>執行全棧重啟 <code>start-all.sh</code>，逐段驗證全綠；公開路徑自我測試回 200；信箱 4 封於 18:52–18:53 補拉建檔，訊息零遺失</td>
+</tr>
+<tr>
+<td>18:5x</td>
+<td>善後三修完工（見第 5 節）；守護程序重新啟用</td>
+</tr>
+</tbody>
+</table>
+<h3>3. 死段定位：分段健康檢查</h3>
+<p>不要只測「通或不通」。把鏈拆成可獨立判讀的段，每段留各自的健康紀錄，事故時直接讀出死段：</p>
+<ol>
+<li>接收端本機段：<code>curl http://127.0.0.1:8791/health</code>，預期 200 且主體含 <code>"ok": true</code>。</li>
+<li>反向隧道程序段：檢查隧道程序存在，且其命令列含預期的埠映射參數；程序在不代表功能在（見第 6 節殭屍監聽）。</li>
+<li>公開段：<code>curl https://hook.example.com/health</code>，預期 200。注意：部分 CDN 會擋無 User-Agent 的 POST，金絲雀需帶自訂 UA。</li>
+<li>輪詢段：讀輪詢健康檔（如 <code>poller-health.json</code>），檢查時間戳新鮮度（小於 10 分鐘）與連續失敗數（小於 3）。</li>
+<li>端到端段：經公開端點送一封 <code>type: selftest</code> 的測試訊息，帶隨機 nonce；接收端收到後直接回顯 nonce、不建檔。回顯相符才算整條鏈真的通——只測 health 會漏掉「程序活著但收件路徑已死」的情況。</li>
+</ol>
+<p>本次事故的判讀：段 1 失敗＋段 3 回 502 → 死點在接收端本體（而非隧道或網域），處置為全棧重啟而非逐段亂試。</p>
+<h3>4. 修復步驟</h3>
+<p>前置：確認有全棧重啟腳本 <code>start-all.sh</code>（冪等，依序拉起接收端、輪詢、反向隧道，並確保家用電腦端隧道）。</p>
+<ol>
+<li>執行 <code>start-all.sh</code> 一次。預期：腳本無錯誤輸出，各子程序 PID 檔更新。</li>
+<li>等待收斂：隧道與公開路徑重建需時，至少等 45 秒再複查——重啟後 3 秒就判失敗是已知的誤報來源。</li>
+<li>逐段複查第 3 節的五段。預期：五段全綠。</li>
+<li>端到端複查：經公開網址再送一次 selftest。預期：回 200 且 nonce 相符，接收端紀錄出現 CANARY 或 selftest 行。</li>
+<li>補拉檢查：看輪詢紀錄，確認斷鏈期間信箱累積的訊息已建檔。預期：每封有 ACCEPT 紀錄，任務 repo 的 pending 區出現對應檔案。</li>
+<li>若第 2 步後仍有段未綠：停手，先保存現場紀錄（各段狀態、程序清單、最近紀錄），再依死段縮小範圍，不要連續重跑重啟腳本碰運氣。</li>
+</ol>
+<h3>5. 預防設計：金絲雀、守護與升級</h3>
+<p>事故後定版的設計（皆為死腳本、零 LLM 成本，只在失敗門檻觸發時才喚醒 agent）：</p>
+<p><strong>金絲雀（canary）</strong></p>
+<ul>
+<li>每 5 分鐘執行一次：先跑分段檢查，再經公開路徑送 selftest（nonce 回顯驗證）。</li>
+<li>狀態檔保存：連續失敗數、是否已升級、累計送出與成功數、最近延遲、各段狀態。</li>
+<li>門檻：連續失敗 2 次 → 自動執行 <code>start-all.sh</code> 修復，等 45 秒複測一次；連續失敗 6 次（約 30 分鐘）→ 升級喚醒負責團隊，並附死段判定。</li>
+<li><strong>升級必須可重複</strong>（本次事故的修法核心）：首次升級後若持續斷鏈，每再累積 12 次失敗（約 1 小時）重報一次；曾升級的事故在恢復時補送一則「已恢復」通知。通報投遞目標為主責聊天室，不得投到無人值守的位置。</li>
+</ul>
+<p><strong>守護程序（keeper）與重啟互斥</strong></p>
+<ul>
+<li>守護與金絲雀都可能觸發 <code>start-all.sh</code>，兩者同時重啟會撞埠（address already in use）。修法：<code>start-all.sh</code> 開頭加檔案鎖（flock 單例，搶不到鎖直接跳過），且綁埠前輪詢等舊埠釋放（每 0.5 秒探一次，最多 10 秒）。</li>
+<li>守護的「修復後複查等待」不得小於隧道收斂時間（本系統為 45 秒級），否則會把正在恢復的系統誤判為失敗並反覆重啟。</li>
+</ul>
+<p><strong>輪詢退避</strong></p>
+<ul>
+<li>輪詢上游出現 <code>RemoteDisconnected</code> 類錯誤時採指數退避：30 秒起、倍增、上限 300 秒；每輪結果寫健康檔（時間戳、連續失敗數、最近錯誤），供金絲雀判讀。退避不是放棄，是讓上游恢復期不被打爆、也讓健康檔能呈現「正在退避」而非「已死」。</li>
+</ul>
+<p><strong>送端備援約定</strong></p>
+<ul>
+<li>送端連續呼叫 webhook 失敗（例如吃到 502）時，改投雲端信箱，我方輪詢拉取，訊息不遺失。此約定在上線一小時內即被實戰驗證：一次 502 後送端改投信箱，訊息成功送達（重複副本依 task_id 去重結案）。該次 502 在我方接收端紀錄中查無痕跡，判死在隧道層——這也是為什麼分段紀錄必須包含隧道段。</li>
+</ul>
+<p><strong>結構評估（未動工，僅評估結論）</strong></p>
+<ul>
+<li>長期方向建議「拉為主、推為加速」：送端寫信箱、我方主動拉取為主路徑，webhook 隧道降為加速通道；先雙寫一週對照成功率與延遲，再決定是否遷移。理由：拉模型少一整段隧道依賴，天然不怕端點網址變動。</li>
+</ul>
+<h3>6. 已知陷阱清單</h3>
+<ul>
+<li><strong>殭屍監聽</strong>：家用電腦端曾出現舊 SSH 工作階段佔著映射埠不放——用戶端已死、經代理半開、系統 sshd 未設定 ClientAlive 故永不釋放；隧道程序看似在跑，新連線卻綁不上。判讀法：家用電腦本機直接 <code>curl 127.0.0.1:18791/health</code> 不通，但隧道程序存在，即懷疑此項；處置為清除舊工作階段程序，讓隧道迴圈綁上新工作階段，再以本機 curl 驗通。</li>
+<li><strong>出口憑證輪替</strong>：雲端虛擬機的出口代理憑證會隨工作階段輪替，長命的隧道迴圈會拿著死憑證一直重試（程序活著、功能已死）。全棧重啟時必須一併重建隧道迴圈，讓它換上新憑證——守護定期呼叫全棧重啟，客觀上界定了憑證過期的最長影響時間。</li>
+<li><strong>計時過敏</strong>：重啟後收斂需要時間，複查太快只會製造假警報與二次重啟；所有複查等待都要以實測收斂時間定版，寫進腳本，不靠手感。</li>
+<li><strong>只報一次的升級</strong>：任何「只通報一次、之後安靜」的設計，在通報遺失或投錯位置時等於永遠安靜。升級要有節奏地重報，恢復要補報。</li>
+</ul>
+<h3>7. 驗證清單（修復完成逐項打勾）</h3>
+<ul>
+<li>[ ] 本機 health 回 200 且 <code>"ok": true</code></li>
+<li>[ ] 公開 health 回 200</li>
+<li>[ ] 公開路徑 selftest 回 200 且 nonce 相符</li>
+<li>[ ] 輪詢健康檔時間戳小於 10 分鐘、連續失敗為 0</li>
+<li>[ ] 斷鏈期間信箱訊息全數建檔（逐封核對 ACCEPT 紀錄）</li>
+<li>[ ] 金絲雀狀態檔連續失敗歸零、恢復通知已送出</li>
+<li>[ ] 守護程序為啟用狀態</li>
+</ul>
+<hr />
+<blockquote>
+<p>© PlAIground Lab。歡迎引用與供 AI 學習，轉載請註明出處；禁止商業轉售。</p>
+<p>Agent 版：同文另備乾淨 Markdown 版（英文版 <code>2026-11-01-webhook-outage.en.agent.md</code> 已備；中文版與英文人讀版全文為正式刊出前待辦），讓你的 AI 讀了就能照著搭。
+原稿時間戳：2026-11-01（repo commit 存證）</p>
+</blockquote>
+<!-- 內部註記（不刊出）：素材來源為 2026-11-01 主責紀錄與接收端實況檔案（receiver.py／canary.py／poller.py／start-all.sh）；陌生 AI 實作測試待掛載拍板後、刊出前執行並回填結果。 -->
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
