@@ -59,7 +59,7 @@ Algorithm per run:
 3. If fail:
    - Increment `consecutive_fails`. Save dead segments.
    - If `consecutive_fails` equals 2: run `start-all.sh` once, wait 45 seconds, re-run the check once. If the recheck passes, treat as recovery per step 2.
-   - If `consecutive_fails` is 6, or (`escalated` is true and `consecutive_fails` is a multiple of 12): emit an escalation notification to the primary operator chat containing the dead segments list and the end-to-end status code. Set `escalated` to true.
+   - If `consecutive_fails` is 6, or (`escalated` is true and (`consecutive_fails` - 6) is a multiple of 12 — i.e. at 18, 30, ...): emit an escalation notification to the primary operator chat containing the dead segments list and the end-to-end status code. Set `escalated` to true.
    - Otherwise stay silent.
 
 Critical rule: escalation repeats roughly every hour while the outage persists, and recovery is always reported if an escalation happened. A notify-once-then-silent design is a known failure mode.
