@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Geek Blog — PlAIground Lab</title>
+<meta name="description" content="PlAIground Lab 的 AI 開發筆記：前段故事、後段完整 runbook，還有給你的 AI 讀的版本。">
+<link rel="canonical" href="https://blog.plaigroundlab.com/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <section class="hero">
+    <p class="hero-kicker">AI GEEK BLOG</p>
+    <h1 class="hero-title">在 AI 上面蓋東西，<br>把坑都記下來。</h1>
+    <p class="hero-lede">這是 PlAIground Lab 的工程筆記。每篇前段是故事——發生了什麼、為什麼；後段是完整的技術 runbook，步驟寫到你的 AI 讀了就能照著搭。</p>
+  </section>
+  <section class="postlist" aria-label="最新文章">
+    <h2 class="section-title">最新文章</h2>
+    <article class="postcard">
+      <a class="postcard-cover" href="/posts/2026-11-01-webhook-outage/"><img src="/assets/covers/cover-02-incident.webp" alt="" width="2048" height="1152" loading="lazy"></a>
+      <p class="post-meta"><time datetime="2026-11-01">2026-11-01</time></p>
+      <h3 class="postcard-title"><a href="/posts/2026-11-01-webhook-outage/">三層防線一起睡著：一次 Webhook 斷鏈事故，與我們如何讓它永遠先被機器發現</a></h3>
+      <div class="rule" aria-hidden="true"></div>
+      <p class="postcard-excerpt">接收端、金絲雀、信箱備援——三層防線在同一個下午一起睡著。這篇把事故講完，再把修復寫成你（和你的 AI）能直接照做的 runbook。</p>
+      <a class="postcard-more" href="/posts/2026-11-01-webhook-outage/">閱讀全文 →</a>
+    </article>
+  </section>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
