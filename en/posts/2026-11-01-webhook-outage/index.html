@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three Lines of Defense, All Asleep: A Webhook Outage, and How We Make Sure a Machine Notices First — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Three Lines of Defense, All Asleep: A Webhook Outage, and How We Make Sure a Machine Notices First">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-01-webhook-outage/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-01-webhook-outage/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-01-webhook-outage/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-01-webhook-outage/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-01">2026-11-01</time></p>
+    <ul class="post-tags"><li>incident</li><li>agent-ops</li><li>orchestration</li><li>automation</li></ul>
+    <h1 class="post-title">Three Lines of Defense, All Asleep: A Webhook Outage, and How We Make Sure a Machine Notices First</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-02-incident.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and build along: <a href="/posts/2026-11-01-webhook-outage.en.agent.md">English</a> · <a href="/posts/2026-11-01-webhook-outage.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Part One: The Story, for Human Readers</h2>
+<p>We have a messaging channel that matters a lot to us: a collaborating AI on the outside sends tasks in through a webhook, our system receives them, files them, and then wakes a patrol program to handle them. It normally works quietly, delivering several urgent tasks a day, and we had even replaced its unstable temporary URL with a fixed domain name just for it.</p>
+<p>On the afternoon of November 1, 2026, that channel went down for more than three hours. The most ironic part was not that it broke, but that — <strong>all three automatic lines of defense were asleep, and in the end it was the user who noticed first.</strong></p>
+<p>Starting at around 15:23 that afternoon, the two programs that receive messages quietly died; the last message successfully received was timestamped 12:03. The first line of defense was supposed to be a "keeper" program: it checks every 5 minutes and automatically restarts the whole service stack if something is broken. But that day it was in a disabled state, so the self-healing never kicked in at all — that was layer one.</p>
+<p>The second line of defense was a "canary" we had launched only that noon: a zero-cost dead script that, every 5 minutes, walks the complete public path, sends a self-test message, and requires the other end to reply with a random code — only a matching code counts as truly connected. It was actually working — it showed a red light every single round, and the end-to-end test returned 502 every single round. But its escalation logic was written as "report once, then stay quiet," and that one single report was delivered to the wrong chat room. The red light stayed on for more than three hours and nobody was woken up — that was layer two.</p>
+<p>The third line of defense was a "backup mailbox": when the main channel cannot deliver, the sender instead drops the message into a cloud mailbox, which we poll every 30 seconds. This layer actually saved us — not one of the 4 messages sent during the outage was lost; they were all sitting in the mailbox. The problem was that the program responsible for fetching the mail had died together with the main program, so the mail sat there for more than three hours, until the whole stack recovered and it was pulled in and filed all at once at 18:52. The backup existed, but the backup's courier was dead too — that was layer three.</p>
+<p>At 18:38, the user noticed that "something seems wrong with messaging." We verified on the spot and confirmed that all three layers were dead at once. At 18:52 we ran a full-stack restart and verified segment by segment: the local health check was normal, the public health check was normal, and a self-test sent through the public URL returned 200. The channel was back, and the 4 messages in the mailbox were promptly backfilled and filed.</p>
+<p>The second part of this article is the complete runbook for this incident: what the architecture looks like, how the canary and the keeper program are designed, how to locate a dead segment, every step of the repair and how to verify it, and the three fixes we added afterwards — so that the next time the channel breaks, a machine notices first, and it is loud enough to wake someone up.</p>
+<p>One thing to say up front: <strong>the value of monitoring is not in "having it installed," but in "its alerting still being alive when things break."</strong> The fact that the alerting path shared the same fate as the system it monitored was the most expensive lesson of this incident.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a>｜<a href="https://plaigroundlab.com">ComputeQuote</a>｜<a href="https://plaigroundlab.com">Axiom</a>｜<a href="https://plaigroundlab.com">Ideal Type</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Architecture: The Fleet Webhook Chain</h3>
+<p>Sender (external collaborating AI) → public endpoint → tunnel layer → receiver → filing → waking the patrol. Backup path: sender → cloud mailbox (KV) → poller program → filing.</p>
+<table>
+<thead>
+<tr>
+<th>Segment</th>
+<th>Component</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>Public endpoint</td>
+<td>Fixed domain <code>https://hook.example.com/hook</code>, POST, requires an <code>X-Fleet-Key</code> header for authentication; JSON body limit 64KB, required field <code>text</code></td>
+</tr>
+<tr>
+<td>S2</td>
+<td>Named tunnel</td>
+<td>Runs on an always-on home computer (the cloud VM's egress cannot carry the tunnel data plane; this architecture was adopted after actual testing), 4 QUIC connections</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>Reverse tunnel</td>
+<td>The VM proactively establishes an SSH reverse tunnel to the home computer, mapping the receiver port over: home computer local 18791 → VM 127.0.0.1:8791</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>Receiver</td>
+<td>A Python standard-library HTTP service listening on 127.0.0.1:8791; after authentication succeeds, it writes the task into the task repo's <code>tasks/pending/</code>, then wakes the patrol program on the home computer via SSH</td>
+</tr>
+<tr>
+<td>S5</td>
+<td>Mailbox poller</td>
+<td>Pulls the cloud mailbox every 30 seconds; when there is mail, it files it in the same format as the receiver, deletes the mail, leaves a receipt record, and wakes the patrol — this is the backup and asynchronous delivery path</td>
+</tr>
+</tbody>
+</table>
+<p>Health check endpoints: local <code>GET http://127.0.0.1:8791/health</code> and public <code>GET https://hook.example.com/health</code>, both returning <code>{"ok": true}</code> when healthy.</p>
+<p>Receiver validation rules (the four causes of a 400, each returning an error string): body size mismatch, JSON cannot be parsed, <code>text</code> missing or empty, <code>task_id</code> format invalid; there are also 401 (key mismatch) and 409 (duplicate). When troubleshooting, read the error string first — don't start by guessing that the sender is broken.</p>
+<h3>2. Incident Timeline (2026-11-01, America/Phoenix)</h3>
+<table>
+<thead>
+<tr>
+<th>Time</th>
+<th>Event</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Night of 10-29</td>
+<td>Receiver built, initially using a temporary tunnel URL (changes on every restart)</td>
+</tr>
+<tr>
+<td>10-30</td>
+<td>Fixed-domain named tunnel goes live (running on the home computer); mailbox backup path goes live</td>
+</tr>
+<tr>
+<td>All night 10-31</td>
+<td>The receiver is restarted multiple times by the keeper program; spot checks each time show it has already self-healed; the keeper's "wait only 3 seconds after restart before re-checking" cannot keep up with tunnel convergence, so it repeatedly misjudges the state as failed (timing oversensitivity, not a real fault)</td>
+</tr>
+<tr>
+<td>Morning of 11-01</td>
+<td>The sender reports two consecutive 400s: verification shows our format has not changed; the receiver gains rejection-reason logging (REJECT logging, recording only the reason and field names, not the content), and probe verification passes</td>
+</tr>
+<tr>
+<td>11-01 12:0x</td>
+<td>First round of improvements completed: canary goes live, polling gains exponential backoff, the old keeper version is disabled; the pull-model evaluation is finished but not implemented</td>
+</tr>
+<tr>
+<td>Around 15:23</td>
+<td>The receiver and the poller program die; the last successful receipt remains at 12:03</td>
+</tr>
+<tr>
+<td>15:23–18:38</td>
+<td>The canary shows full-segment red every 5 minutes (end-to-end returns 502), but escalation fires only once and to the wrong location, then stays silent; the keeper program is in a disabled state and does not self-heal; the backup mailbox accumulates 4 messages that are never pulled</td>
+</tr>
+<tr>
+<td>18:38</td>
+<td>The user points out a messaging problem; the team verifies on the spot and confirms all three layers are dead at once</td>
+</tr>
+<tr>
+<td>18:52</td>
+<td>Full-stack restart via <code>start-all.sh</code> executed; segment-by-segment verification all green; self-test via the public path returns 200; the 4 mailbox messages are pulled and filed at 18:52–18:53, with zero message loss</td>
+</tr>
+<tr>
+<td>18:5x</td>
+<td>The three post-incident fixes are completed (see Section 5); the keeper program is re-enabled</td>
+</tr>
+</tbody>
+</table>
+<h3>3. Locating the Dead Segment: Segmented Health Checks</h3>
+<p>Don't just test "connected or not." Split the chain into segments that can be read independently, have each segment keep its own health record, and when an incident happens you can read the dead segment straight off:</p>
+<ol>
+<li>Receiver local segment: <code>curl http://127.0.0.1:8791/health</code>, expecting 200 with a body containing <code>"ok": true</code>.</li>
+<li>Reverse tunnel process segment: check that the tunnel process exists and that its command line contains the expected port-mapping parameters; the process existing does not mean the function works (see the zombie listener in Section 6).</li>
+<li>Public segment: <code>curl https://hook.example.com/health</code>, expecting 200. Note: some CDNs block POSTs without a User-Agent, so the canary must send a custom UA.</li>
+<li>Poller segment: read the poller health file (such as <code>poller-health.json</code>) and check timestamp freshness (less than 10 minutes) and the consecutive failure count (less than 3).</li>
+<li>End-to-end segment: send a test message of <code>type: selftest</code> through the public endpoint, carrying a random nonce; when the receiver gets it, it echoes the nonce directly without filing anything. Only a matching echo means the whole chain is truly connected — testing health alone misses the case of "the process is alive but the receiving path is dead."</li>
+</ol>
+<p>How this incident read: segment 1 failed + segment 3 returned 502 → the dead point was the receiver itself (not the tunnel or the domain), and the correct response was a full-stack restart rather than poking at segments at random.</p>
+<h3>4. Repair Steps</h3>
+<p>Prerequisite: confirm there is a full-stack restart script <code>start-all.sh</code> (idempotent; it brings up, in order, the receiver, the poller, and the reverse tunnel, and ensures the tunnel on the home-computer side).</p>
+<ol>
+<li>Run <code>start-all.sh</code> once. Expected: the script produces no error output, and each subprocess's PID file is updated.</li>
+<li>Wait for convergence: rebuilding the tunnel and the public path takes time; wait at least 45 seconds before re-checking — judging failure 3 seconds after a restart is a known source of false alarms.</li>
+<li>Re-check the five segments from Section 3 one by one. Expected: all five segments green.</li>
+<li>End-to-end re-check: send another selftest through the public URL. Expected: returns 200 with a matching nonce, and a CANARY or selftest line appears in the receiver log.</li>
+<li>Backfill check: look at the poller log and confirm that the messages accumulated in the mailbox during the outage have been filed. Expected: every message has an ACCEPT record, and the corresponding files appear in the task repo's pending area.</li>
+<li>If, after step 2, some segment is still not green: stop, preserve the scene records first (each segment's status, the process list, the most recent logs), then narrow the scope by dead segment — do not keep re-running the restart script and hoping for luck.</li>
+</ol>
+<h3>5. Prevention Design: Canary, Keeper, and Escalation</h3>
+<p>The design finalized after the incident (all dead scripts with zero LLM cost, waking an agent only when a failure threshold trips):</p>
+<p><strong>Canary</strong></p>
+<ul>
+<li>Runs every 5 minutes: first the segmented checks, then a selftest through the public path (nonce echo verification).</li>
+<li>The state file stores: consecutive failure count, whether escalation has fired, cumulative sent and succeeded counts, most recent latency, and each segment's status.</li>
+<li>Thresholds: 2 consecutive failures → automatically run <code>start-all.sh</code> to repair, wait 45 seconds, and re-test once; 6 consecutive failures (about 30 minutes) → escalate to wake the responsible team, with the dead-segment determination attached.</li>
+<li><strong>Escalation must be repeatable</strong> (the core fix from this incident): after the first escalation, if the outage continues, re-report every additional 12 failures (about 1 hour); when an escalated incident recovers, send a follow-up "recovered" notice. Alerts must be delivered to the primary chat room, never to an unattended location.</li>
+</ul>
+<p><strong>Keeper Program and Restart Mutual Exclusion</strong></p>
+<ul>
+<li>Both the keeper and the canary can trigger <code>start-all.sh</code>, and two simultaneous restarts will collide on the port (address already in use). The fix: <code>start-all.sh</code> takes a file lock at the start (flock single-instance; if the lock cannot be acquired, skip), and before binding a port it polls and waits for the old port to be released (probe every 0.5 seconds, up to 10 seconds).</li>
+<li>The keeper's "wait before re-checking after repair" must not be shorter than the tunnel convergence time (45-second scale for this system); otherwise it will misjudge a system that is still recovering as failed and restart it repeatedly.</li>
+</ul>
+<p><strong>Poller Backoff</strong></p>
+<ul>
+<li>When the poller's upstream produces errors such as <code>RemoteDisconnected</code>, apply exponential backoff: starting at 30 seconds, doubling, capped at 300 seconds; each round's result is written to the health file (timestamp, consecutive failure count, most recent error) for the canary to read. Backoff is not giving up — it keeps the upstream from being hammered while it recovers, and lets the health file show "backing off" instead of "dead."</li>
+</ul>
+<p><strong>Sender Backup Convention</strong></p>
+<ul>
+<li>When the sender's webhook calls fail consecutively (for example, hitting a 502), it switches to dropping messages into the cloud mailbox, which our poller pulls, so no message is lost. This convention was battle-tested within an hour of going live: after one 502, the sender switched to the mailbox and the message was delivered successfully (duplicate copies deduplicated and closed out by task_id). That 502 left no trace in our receiver's log and was determined to have died at the tunnel layer — which is also why the segmented records must include the tunnel segment.</li>
+</ul>
+<p><strong>Structural Assessment (not implemented; assessment conclusion only)</strong></p>
+<ul>
+<li>The recommended long-term direction is "pull as the main path, push as acceleration": the sender writes to the mailbox and we proactively pull as the primary path, with the webhook tunnel demoted to an acceleration channel; first dual-write for a week to compare success rates and latency, then decide whether to migrate. The rationale: the pull model removes an entire segment of tunnel dependency and is inherently indifferent to endpoint URL changes.</li>
+</ul>
+<h3>6. Known Pitfalls Checklist</h3>
+<ul>
+<li><strong>Zombie listener</strong>: on the home-computer side, an old SSH session once held the mapped port without releasing it — the client side was dead, the connection was half-open through the proxy, and the system sshd had no ClientAlive configured, so it was never released; the tunnel process looked like it was running, but new connections could not bind. How to tell: from the home computer itself, <code>curl 127.0.0.1:18791/health</code> fails locally while the tunnel process exists — suspect this item; the remedy is to clear the old session processes, let the tunnel loop bind to a new session, and verify with a local curl.</li>
+<li><strong>Egress credential rotation</strong>: the cloud VM's egress proxy credentials rotate with sessions, and a long-lived tunnel loop will keep retrying with dead credentials (process alive, function dead). A full-stack restart must also rebuild the tunnel loop so it picks up fresh credentials — and the keeper's periodic full-stack restarts objectively bound the maximum impact window of credential expiry.</li>
+<li><strong>Timing oversensitivity</strong>: convergence after a restart takes time; re-checking too fast only manufactures false alarms and secondary restarts. Every re-check wait must be finalized from measured convergence time and written into the script, not left to feel.</li>
+<li><strong>Report-once escalation</strong>: any design that "reports once, then stays quiet" is equivalent to staying quiet forever when that one report is lost or delivered to the wrong place. Escalation must re-report on a rhythm, and recovery must be reported too.</li>
+</ul>
+<h3>7. Verification Checklist (tick each item when the repair is complete)</h3>
+<ul>
+<li>[ ] Local health returns 200 with <code>"ok": true</code></li>
+<li>[ ] Public health returns 200</li>
+<li>[ ] Selftest via the public path returns 200 with a matching nonce</li>
+<li>[ ] Poller health file timestamp is less than 10 minutes old, with 0 consecutive failures</li>
+<li>[ ] All mailbox messages from the outage period are filed (verify each against its ACCEPT record)</li>
+<li>[ ] Canary state file's consecutive failure count is back to zero, and the recovery notice has been sent</li>
+<li>[ ] Keeper program is in an enabled state</li>
+</ul>
+<hr />
+<blockquote>
+<p>© PlAIground Lab. Quoting and use for AI learning are welcome; please credit the source when republishing. Commercial resale is prohibited.</p>
+<p>Agent version: a clean Markdown version of this article is also available (the English version, <code>2026-11-01-webhook-outage.en.agent.md</code>, is ready, and a Chinese agent version is provided as well), so your AI can read it and build along with it.
+Original manuscript timestamp: 2026-11-01 (preserved via repo commit)</p>
+</blockquote>
+<!-- Internal note (not for publication): source material is the 2026-11-01 primary record and the receiver's live files (receiver.py / canary.py / poller.py / start-all.sh); the stranger-AI implementation test is to be run after the hosting decision is finalized and before publication, with the results filled back in. -->
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
