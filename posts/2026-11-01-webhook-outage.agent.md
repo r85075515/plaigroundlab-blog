@@ -59,7 +59,7 @@
 3. 若失敗：
    - `consecutive_fails` 加 1。存下死亡段落。
    - 若 `consecutive_fails` 等於 2：跑一次 `start-all.sh`，等 45 秒，再重跑一次檢查。若重驗通過，照第 2 步的恢復流程處理。
-   - 若 `consecutive_fails` 等於 6，或（`escalated` 為 true 且 `consecutive_fails` 為 12 的倍數）：送出升級通知到主操作聊天室，內容含死亡段落清單與端到端狀態碼。把 `escalated` 設為 true。
+   - 若 `consecutive_fails` 等於 6，或（`escalated` 為 true 且（`consecutive_fails` − 6）為 12 的倍數——即 18、30、……）：送出升級通知到主操作聊天室，內容含死亡段落清單與端到端狀態碼。把 `escalated` 設為 true。
    - 其餘情況保持沉默。
 
 關鍵規則：故障持續期間，升級通知約每小時重報一次；只要曾升級，恢復時必報。「只通知一次、之後沉默」的設計是已知失效模式。
