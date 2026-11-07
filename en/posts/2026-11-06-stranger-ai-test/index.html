@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How We Verify an Article Can Be Followed and Built by Another AI — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="How We Verify an Article Can Be Followed and Built by Another AI">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-06-stranger-ai-test/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-06-stranger-ai-test/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-06-stranger-ai-test/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-06-stranger-ai-test/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-06">2026-11-06</time></p>
+    <ul class="post-tags"><li>agent-ops</li><li>documentation</li><li>testing</li><li>orchestration</li></ul>
+    <h1 class="post-title">How We Verify an Article Can Be Followed and Built by Another AI</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-03-fleet.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-06-stranger-ai-test.en.agent.md">English</a> · <a href="/posts/2026-11-06-stranger-ai-test.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Part One: The Story, for Human Readers</h2>
+<p>In our previous post, we turned a webhook outage into a complete runbook and attached an "agent edition" — clean Markdown, broken into steps, billed as "let your AI read it and learn, pain-free." The problem: billing is not proof. A document can read smoothly and still trip up whoever (or whatever) follows it. The places the author finds perfectly clear are often exactly where the reader is missing information — the author just can't see it.</p>
+<p>So before publishing, we added a gate, and it is now a standing rule for every post on this site: the <strong>stranger-AI implementation test</strong>. Find an AI that took no part in the project, give it only that one agent-edition document — no project files, no background, no asking the author — and have it build the entire system from scratch, following the document. If it builds it and the verification checklist passes in full, the post may be published. If it can't, the document goes back for revision, gets fixed, and gets retested.</p>
+<p>The first post went through exactly that. The result was interesting enough to deserve its own article.</p>
+<p>The tester received the English agent edition. It built the whole system in one pass: receiver, tunnel forwarding, mailbox polling, canary, segmented health checks, keeper daemon, full-stack startup script, sender fallback — every component the document described was there, and it worked. The document's own verification checklist had 8 items, and 7 passed outright. Looking only at that result, you would say the document was in great shape.</p>
+<p>But the value of the test is not in those 7 items. It is in the rest.</p>
+<p><strong>First, it caught the document contradicting itself.</strong> The last item on the verification checklist came back as a partial pass: the timing of the canary's "re-escalation." The document's algorithm section said it fires "when the consecutive-failure count is a multiple of 12" (that is, at the 12th failure), while the verification checklist said "12 more after the first escalation" (that is, the 18th). The tester implemented it following the algorithm section, re-reporting at number 12; checked against the checklist, it did not match. We wrote both passages ourselves and never noticed they disagreed. In the end we took the production code as the authority — the first report at the 6th failure, then every 12 after that (18, 30, …) — aligned both places in the document, and synced and pushed the fixes to both language versions of the agent edition.</p>
+<p><strong>Second, it marked every place the document didn't say.</strong> The tester operated under a rule: where the document is unclear, you may not guess silently — you make a choice, write the choice down, and log a gap. In the end it delivered 21 gaps, all at the format and schema level: the task ID format was never defined; several error cases gave error strings but no HTTP status codes; what a success response's body looks like was never written; the task file's name and fields were never written… Not one of them blocked the build, but every one forced the tester to stop and invent a spec on the spot. All 21 went into the document's v1.1 improvement list.</p>
+<p><strong>Third, it even caught a real trap the document never warned about.</strong> The first version of the full-stack startup script it implemented had a bug: the file lock used to prevent duplicate launches was inherited by background child processes through the file descriptor, so every later rerun misjudged the situation as "the lock is still held" and skipped itself — the system could never restart. The document never mentioned this pit. The tester fell into it, fixed it, and logged it as a gap: "The document should warn about this."</p>
+<p>That is the full logic of this gate: <strong>a document's quality cannot be graded by its author; it has to be voted on by an implementer with no context, using a single criterion — can this actually be followed through to completion?</strong> And the vote is not just pass or fail — the gap list itself is the improvement spec for the document's next version.</p>
+<p>The second half of this article is the complete runbook for this testing method: how to choose the tester, the boundaries of environment adaptation, the discipline of the implementation phase, how verification runs, how gaps are classified, where the verdict lines are drawn, and how the document goes back for revision. You can lift the whole thing to test your own documents — including the ones written for humans, because a "reader with no context" was never only an AI.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Test design</h3>
+<ul>
+<li><strong>Tester eligibility</strong>: an AI (or engineer) that took no part in the project the document belongs to; they must not have read the project's source code, internal notes, or earlier versions of the document.</li>
+<li><strong>Sole input</strong>: one copy of the document under test, in its agent edition (or the final version about to be published). Beyond that, only the task brief: the target environment, the available tools, and "implement from scratch following the document, then verify."</li>
+<li><strong>Prohibitions</strong>: during the test, no asking the author questions, no consulting project files, and no filling in unspecified specs from "common sense" without logging it.</li>
+<li><strong>Deliverables</strong> (all of them required): a runnable implementation, an item-by-item verification record (with evidence), a gap list, an environment-adaptation record, and a verdict recommendation.</li>
+</ul>
+<h3>2. Environment adaptation rules</h3>
+<p>A real environment will never match the document's assumptions exactly; adaptation is unavoidable, but it is governed by three rules:</p>
+<ol>
+<li><strong>Freeze the semantics</strong>: path semantics, status codes, error strings, and verification values stay exactly as the document states. No changes allowed.</li>
+<li><strong>Declare equivalent substitutions</strong>: the document assumes two machines and you have only one → substitute an equivalent mechanism (for example, simulate the two tunnel layers with a local forwarder), and state what was substituted and why.</li>
+<li><strong>Shift consistently, as a whole set</strong>: a port the document specifies is already taken → shift the entire set consistently, and record the original and new values in the log.</li>
+</ol>
+<p>Adaptation exists so the test can run, not so the test can pass. Any adaptation that would change a verification outcome is strictly forbidden.</p>
+<h3>3. Implementation-phase discipline</h3>
+<ul>
+<li>Implement chapter by chapter, with every component mapped back to a section of the document (the deliverable file list must trace back to sections).</li>
+<li><strong>When the document doesn't say, says it ambiguously, or contradicts itself</strong>: stop; (a) make an explicit choice and implement it; (b) log a gap entry: the location in the document, what is missing, and what choice you made. Guessing silently counts as cheating — that is exactly what this test exists to catch.</li>
+<li>If the document is wrong (contradicts verifiable reality), still implement it as written and log it; do not "fix the document" during the implementation phase.</li>
+</ul>
+<h3>4. Verification phase</h3>
+<ol>
+<li>First run <strong>the document's own verification checklist</strong>, item by item, assigning PASS / FAIL / Partial and attaching evidence (command output, state-file contents, log line counts).</li>
+<li>Then run <strong>supplementary probing</strong>: spot-check, one by one, the contracts the document claims outside its checklist (error responses, safety rules, deduplication, backoff, fallback paths, and so on).</li>
+<li>Fault injection: if the checklist includes fault scenarios (for example, forcibly stopping a component to observe alert timing), carry them out and record the differences between the actual behavior and what the document claims.</li>
+</ol>
+<h3>5. Gap classification</h3>
+<p>Every gap is labeled along two dimensions:</p>
+<ul>
+<li><strong>Category</strong>: format/schema level (format, fields, status codes, or naming left undefined) | contract ambiguity (behavioral boundaries unclear) | internal contradiction (two claims disagree) | substantive error (a claim doesn't match reality).</li>
+<li><strong>Severity</strong>: blocking (following the document, you can't build it, or what you build is wrong) | non-blocking (buildable, but you must invent the spec yourself).</li>
+</ul>
+<p>An empirical note: a document the author believes is "perfectly clear" will typically yield a double-digit gap count on its first test, mostly at the format/schema level — that is normal; what matters is that the gaps are now visible.</p>
+<h3>6. Verdict lines</h3>
+<ul>
+<li><strong>Pass</strong>: every component can be implemented following the document; the verification checklist passes in full; all gaps are non-blocking.</li>
+<li><strong>Conditional pass</strong>: implementation completes, but the checklist contains partial passes, or the gaps include an "internal contradiction" — the contradiction must be adjudicated first (against verifiable ground truth, such as production code or measured behavior) and the document aligned, before it may be published; the remaining non-blocking gaps go into the next version's improvement list.</li>
+<li><strong>Fail</strong>: any component cannot be implemented following the document, or the result does not match the core behavior the document claims. The document goes back for revision; after revision, a different stranger tester retests it — the original tester may not retest from memory.</li>
+</ul>
+<h3>7. Revision loop and version records</h3>
+<ul>
+<li>Adjudications and fixes are applied simultaneously to all language versions (on this site, the Chinese and English agent editions) and republished once fixed.</li>
+<li>The gap list is never destroyed: it is the document's improvement spec. Check items off version by version and keep the record (which version fixed which items).</li>
+<li>All test evidence (implementation, logs, reports) is archived. If anyone later questions "can this document really be followed?", the evidence answers directly.</li>
+</ul>
+<h3>8. Common misuses</h3>
+<ul>
+<li><strong>Testing with someone who participated</strong>: they will fill the gaps from memory, and the test becomes invalid.</li>
+<li><strong>Only watching whether the checklist passes</strong>: a fully passing checklist can still hide 20 instances of "forced to invent the spec"; the gap list is the primary deliverable.</li>
+<li><strong>Treating gaps as the tester's fault</strong>: a gap is a property of the document, not of the implementer. Every gap a tester logs makes the document better.</li>
+<li><strong>Testing without fixing</strong>: a test with no revision loop is just a ritual. Passing the gate means: no fix, no publish.</li>
+</ul>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
