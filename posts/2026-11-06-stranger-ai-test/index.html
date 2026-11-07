@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我們如何驗證「一篇文章能不能被另一個 AI 照著做」 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="我們如何驗證「一篇文章能不能被另一個 AI 照著做」">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-06-stranger-ai-test/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-06-stranger-ai-test/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-06-stranger-ai-test/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-06-stranger-ai-test/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-06">2026-11-06</time></p>
+    <ul class="post-tags"><li>agent-ops</li><li>documentation</li><li>testing</li><li>orchestration</li></ul>
+    <h1 class="post-title">我們如何驗證「一篇文章能不能被另一個 AI 照著做」</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-03-fleet.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-06-stranger-ai-test.agent.md">中文版</a>・<a href="/posts/2026-11-06-stranger-ai-test.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>上一篇我們把一場 webhook 斷鏈事故寫成了完整的 runbook，還附了一份「agent 版」——乾淨的 Markdown、步驟化，號稱「讓你的 AI 讀了就無痛學會」。問題是：號稱沒有用。文件寫得順，不代表照著做的人（或 AI）不會卡住；作者覺得清楚的地方，往往正是讀者缺資訊的地方，只是作者自己看不見。</p>
+<p>所以我們在刊出前加了一道門檻，現在它成了本站每一篇的固定規矩：<strong>陌生 AI 實作測試</strong>。找一個完全沒參與過這個專案的 AI，只給它那一份 agent 版文件，不給專案檔案、不給背景、不能問作者，要它照著文件從零把整套系統搭出來。搭得起來、驗收清單全過，才准刊出；搭不起來，文件回爐，改完重測。</p>
+<p>第一篇就這樣被測了一次。結果很有意思，值得單獨寫一篇。</p>
+<p>測試者拿到的是英文 agent 版。它一次把整套系統建了出來：接收端、隧道轉發、信箱輪詢、金絲雀、分段健康檢查、守護程序、全棧啟動腳本、送端備援——文件描述的每個組件都有，而且能動。文件自帶的驗收清單 8 條，7 條全過。光看這個結果，你會說這份文件很好。</p>
+<p>但測試的價值不在那 7 條，在剩下的部分。</p>
+<p><strong>第一，它抓出文件自己跟自己打架。</strong> 驗收清單的最後一條部分通過：金絲雀的「重複升級」時點，文件演算法段寫的是「連續失敗次數為 12 的倍數時」（也就是第 12 次），驗收清單寫的卻是「首次升級後再隔 12 次」（也就是第 18 次）。測試者照演算法段實作，在第 12 次重報；照清單驗收，就不合。兩段都是我們寫的，我們自己從來沒發現它們不一致。最後以生產環境的程式碼為準——首報在第 6 次、之後每隔 12 次（18、30……），文件兩處都改齊，雙語 agent 版同步回推上線。</p>
+<p><strong>第二，它把「文件沒寫」的地方全部標了出來。</strong> 測試者被規定：文件沒講清楚的地方不准默默猜，要做一個選擇、把選擇記下來、同時登記一條缺口。最後它交出 21 條缺口——全部是格式與 schema 等級：任務編號的格式沒定義、幾個錯誤情境只給了錯誤字串沒給 HTTP 狀態碼、成功回應的 body 長什麼樣沒寫、任務檔的檔名與欄位沒寫……沒有一條讓它搭不起來，但每一條都逼它停下來自己發明規格。21 條全列入文件的 v1.1 改進清單。</p>
+<p><strong>第三，它甚至抓出一個文件沒警告的真陷阱。</strong> 它實作的全棧啟動腳本第一版有個 bug：用來防重複啟動的檔案鎖，被背景子程序繼承了檔案描述符，導致之後每次重跑都誤判「鎖還被佔著」、直接跳過——系統永遠重啟不了。這個坑文件沒提，它自己踩到、修好，並登記為缺口：「文件應警告這件事。」</p>
+<p>這就是這道門檻的完整邏輯：<strong>文件的品質不能由作者自評，要由一個沒有上下文的實作者用「能不能照著做完」來投票。</strong> 而且投票結果不只是一個過或不過——缺口清單本身就是下一版文件的改進規格。</p>
+<p>這篇文章的後段，是這套測試方法的完整 runbook：怎麼選測試者、環境適配的邊界、實作階段的紀律、驗收怎麼跑、缺口怎麼分類、判定線畫在哪、文件怎麼回爐。你可以整套搬去測你自己的文件——包括給人讀的那些，因為「沒上下文的讀者」從來不只是 AI。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 測試設計</h3>
+<ul>
+<li><strong>測試者資格</strong>：未參與該文件所屬專案的 AI（或工程師）；不得讀過專案的原始碼、內部筆記或先前版本文件。</li>
+<li><strong>唯一輸入</strong>：受測文件的 agent 版（或待刊出的最終版）一份。除此之外只有任務說明：目標環境、可用工具、「照文件從零實作並驗收」。</li>
+<li><strong>禁止事項</strong>：測試期間不得向作者提問、不得查閱專案檔案、不得用「常識」補完文件沒寫的規格而不留紀錄。</li>
+<li><strong>產出物</strong>（缺一不可）：可運行的實作、逐項驗收紀錄（含證據）、缺口清單、環境適配紀錄、判定建議。</li>
+</ul>
+<h3>2. 環境適配規則</h3>
+<p>真實環境不可能跟文件假設完全一樣，適配無可避免，但要守三條：</p>
+<ol>
+<li><strong>語意凍結</strong>：路徑語意、狀態碼、錯誤字串、驗收值照文件，不准改。</li>
+<li><strong>等效替代要宣告</strong>：文件假設兩台機器、手邊只有一台 → 用等效機制替代（例如以本機轉發器模擬兩層隧道），並寫明替代方式與理由。</li>
+<li><strong>平移要整組一致</strong>：文件指定的埠號被佔用 → 整組一致平移，並在紀錄裡寫明原值與新值。</li>
+</ol>
+<p>適配是為了讓測試能跑，不是為了讓測試能過。凡是會改變驗收結果的適配，一律不准。</p>
+<h3>3. 實作階段紀律</h3>
+<ul>
+<li>逐章實作，每個組件對應到文件的章節（產出檔案清單要能對回章節）。</li>
+<li><strong>遇到文件沒寫、寫得含糊、或兩處矛盾時</strong>：停下來，(a) 做一個明確選擇並實作，(b) 在缺口清單登記一條：文件位置、缺了什麼、自己做了什麼選擇。默默猜測視同作弊——那正是這道測試要抓的東西。</li>
+<li>文件寫錯（與可驗證的現實矛盾）也照實作、照登記；不在實作階段自行「修正文件」。</li>
+</ul>
+<h3>4. 驗收階段</h3>
+<ol>
+<li>先跑<strong>文件自帶的驗收清單</strong>，逐項給 PASS／FAIL／部分通過，附證據（指令輸出、狀態檔內容、紀錄檔行數）。</li>
+<li>再跑<strong>補充探測</strong>：文件在清單之外宣稱的契約（錯誤回應、安全守則、去重、退避、備援路徑等）逐項抽測。</li>
+<li>故障注入：清單若包含故障情境（如強制中斷某組件觀察告警時點），照做並記錄實際行為與文件宣稱的差異。</li>
+</ol>
+<h3>5. 缺口分類</h3>
+<p>每條缺口標兩個維度：</p>
+<ul>
+<li><strong>類別</strong>：格式／schema 級（格式、欄位、狀態碼、命名未定義）｜契約含糊（行為邊界不清）｜文件自相矛盾（兩處宣稱不一致）｜實質錯誤（宣稱與現實不符）。</li>
+<li><strong>嚴重度</strong>：阻擋（照文件做不出來或做出來是錯的）｜不阻擋（能做，但必須自行發明規格）。</li>
+</ul>
+<p>經驗值：一份「作者覺得寫得很清楚」的文件，第一次測通常會收穫兩位數的缺口，且以格式／schema 級為主——這正常，重點是它們從此被看見。</p>
+<h3>6. 判定線</h3>
+<ul>
+<li><strong>通過</strong>：全部組件可照文件實作完成；驗收清單全過；缺口全為不阻擋級。</li>
+<li><strong>有條件通過</strong>：可實作完成，但清單有部分通過或缺口含「文件自相矛盾」——矛盾必須先裁定（以可驗證的地面真相為準，例如生產程式碼或實測行為）、文件修齊後才刊出；其餘不阻擋缺口列入下一版改進清單。</li>
+<li><strong>不通過</strong>：任一組件照文件實作不出來，或實作出來與文件宣稱的核心行為不符。文件回爐：修訂後由另一位陌生測試者重測，不得由原測試者憑記憶複測。</li>
+</ul>
+<h3>7. 回爐與版本紀錄</h3>
+<ul>
+<li>裁定與修正同步套用到所有語言版本（本站為中文與英文 agent 版），修正後重新發布。</li>
+<li>缺口清單不銷毀：它是文件的改進規格，逐版勾銷並留紀錄（哪一版修了哪幾條）。</li>
+<li>測試的全部證據（實作、紀錄、報告）留檔保存，之後任何人質疑「這份文件真的能照著做嗎」，證據直接回答。</li>
+</ul>
+<h3>8. 常見誤用</h3>
+<ul>
+<li><strong>用參與過的人來測</strong>：他會用記憶補完缺口，測試失效。</li>
+<li><strong>只看驗收清單過不過</strong>：清單全過也可能藏著 20 條「被迫發明規格」；缺口清單才是主要產出。</li>
+<li><strong>把缺口當測試者的錯</strong>：缺口是文件的屬性，不是實作者的。測試者每登記一條，都是在幫文件變好。</li>
+<li><strong>測完不改</strong>：沒有回爐迴圈的測試只是儀式。通過門檻的意思是：不改完，不刊出。</li>
+</ul>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
