@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 虛擬創作者的 SFW 營運日常：內容管線怎麼分工 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="AI 虛擬創作者的 SFW 營運日常：內容管線怎麼分工">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-08-virtual-creator-ops/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-08-virtual-creator-ops/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-08-virtual-creator-ops/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-08-virtual-creator-ops/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-08">2026-11-08</time></p>
+    <ul class="post-tags"><li>virtual-creator</li><li>agent-ops</li><li>orchestration</li><li>content-pipeline</li></ul>
+    <h1 class="post-title">AI 虛擬創作者的 SFW 營運日常：內容管線怎麼分工</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-01-subdomain.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-08-virtual-creator-ops.agent.md">中文版</a>・<a href="/posts/2026-11-08-virtual-creator-ops.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>PlAIground Lab 經營一位 AI 虛擬創作者。她的臉有一張官方「錨點圖」定妝，日常內容以 SFW 為主：生活照、服裝照、短影音。這篇文章不談創作，談營運——當內容量要靠管線撐起來，「哪種內容給哪個引擎生、誰先篩、篩不過怎麼辦」就是每天的功課。以下全是公開級（SFW）產線的真實運作規則。</p>
+<p><strong>第一條規則：照內容類型分流，不照心情選引擎。</strong> 我們手上有兩個生圖／生片引擎，強項不同。臉孔主導的靜圖、全包覆的生活照、純背景素材，交給引擎 A（本文稱 Muse 線）當主力——它的人臉一致性最穩。需要身材存在感的內容類型，引擎 A 先天弱，交給引擎 B（Grok 線）主力、A 補位。最麻煩的是灰區：臉跟身材都重要的 brief——規則寫死由 B 主責、A 補位，而且<strong>每一次分流判定都要留紀錄</strong>，事後才對得起帳：哪類內容在哪個引擎的首過率多少，成本帳就是這樣長出來的。</p>
+<p><strong>第二條規則：先篩後給人看。</strong> 每張生成物先過機器篩選才進人工挑圖：用臉部辨識模型（ArcFace）把成品跟錨點圖算相似度，分數分三帶——0.55 以上是候選、0.40–0.55 只給審核者看、0.40 以下直接作廢，連給人看都不必。人只看機器篩剩的，時間花在品味判斷，不花在淘汰明顯不像的圖。短影音更貴，所以紀律更硬：SFW 短片用錨點直生、每支最多試 3 次，3 次不過篩就改走引擎 B，不無限重骰——首過率大約 20% 這個數字，是直接寫進成本帳算過的。</p>
+<p><strong>第三條規則：有些東西永遠不寫進 prompt。</strong> 我們吃過一次虧：把角色的身材規格寫進生成 prompt，結果那一批四張全被引擎的內容守衛擋下。之後規格拆兩半：prompt 欄只放髮型與中性的輪廓用語，身材規格只存在於「驗收欄」——用來挑圖，不用來生圖。規格是驗收標準，不是生成指令，這條分界救了後面所有的批次。</p>
+<p><strong>第四條規則：額度是預算，不是運氣。</strong> 引擎 B 的圖像額度每週重置、用完就停產，所以設了 95% 硬停線：額度燒到 95% 就停，把最後一點留給硬交付；有死線的交付優先於一切常態生產。引擎不用錢的那條線（A）就盡量吃量，把要花額度的題材留給 B。這不是省錢小聰明，是產線不中斷的保險。</p>
+<p>營運到最後你會發現，虛擬創作者的真本事不在某一張圖，而在這套分工表：什麼內容走哪條線、機器先篩掉什麼、人只在哪一步介入、額度在哪裡踩煞車。圖是產出，管線才是資產。</p>
+<p>這篇文章的後段，是這套分流與篩選規則的完整規格：分流表、篩選分帶、重試上限、額度護欄與紀錄要求——可以整套搬去套在任何「多引擎＋角色一致性」的內容產線。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 分流表（每件 brief 先分類，再派工）</h3>
+<table>
+<thead>
+<tr>
+<th>內容類型</th>
+<th>主力</th>
+<th>補位</th>
+<th>備註</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>臉孔主導 SFW 靜圖（特寫、半身、CG）</td>
+<td>引擎 A</td>
+<td>—</td>
+<td>一致性優先</td>
+</tr>
+<tr>
+<td>全包覆生活照（日常穿搭、街景）</td>
+<td>引擎 A</td>
+<td>引擎 B</td>
+<td>A 首過率不足才轉 B</td>
+</tr>
+<tr>
+<td>純背景／場景素材</td>
+<td>引擎 A</td>
+<td>—</td>
+<td>無人物，無一致性風險</td>
+</tr>
+<tr>
+<td>SFW 日常短片</td>
+<td>引擎 A（有限主力）</td>
+<td>引擎 B</td>
+<td>A 每支上限 3 次（見第 3 節）</td>
+</tr>
+<tr>
+<td>需要身材存在感的類型</td>
+<td>引擎 B</td>
+<td>引擎 A</td>
+<td>A 此類首過率低，不當主力</td>
+</tr>
+<tr>
+<td>灰區（臉孔與身材存在感兼需）</td>
+<td>引擎 B</td>
+<td>引擎 A</td>
+<td><strong>每次判定留紀錄</strong>：brief 編號、判定結果、理由一句</td>
+</tr>
+</tbody>
+</table>
+<h3>2. 機器篩選（人看之前）</h3>
+<ul>
+<li>工具：臉部辨識嵌入模型（ArcFace），成品與官方錨點圖算餘弦相似度。</li>
+<li>分帶處置：</li>
+<li><strong>≥ 0.55</strong>：候選，進人工挑圖。</li>
+<li><strong>0.40–0.55</strong>：僅審核者可見，不直接進挑圖池。</li>
+<li><strong>&lt; 0.40</strong>：自動作廢，不呈給任何人。</li>
+<li>身材量級同時是靜圖的作廢軸：身體可讀的生活照若量級明顯偏離定版，不論臉分多高都作廢（此軸由審核者目視，寫進挑圖紀錄）。</li>
+</ul>
+<h3>3. 重試與改道</h3>
+<ul>
+<li>SFW 短片（引擎 A）：每支最多 3 次生成；3 次皆不過篩 → 改道引擎 B，不再重骰。</li>
+<li>靜圖批次：不過篩者同批不重生；缺額由下一批補，批次紀錄寫明首過率。</li>
+<li>首過率逐批記入成本帳；某類內容在某引擎連續三批首過率低於 10%，提分流表修訂案。</li>
+</ul>
+<h3>4. Prompt 與規格的分界</h3>
+<ul>
+<li>prompt 欄只放：髮型規格（逐字定版句）、中性輪廓用語（身形曲線分明的成年女性、衣著合身）、場景與劇情層描述。</li>
+<li>永不進 prompt：身材量測與罩杯數字、身體部位形容詞——這些只存在於驗收欄，用於篩選與挑圖。</li>
+<li>違反分界的批次若被引擎守衛攔截，整批作廢並記入事故紀錄，不逐張申訴。</li>
+</ul>
+<h3>5. 額度護欄</h3>
+<ul>
+<li>引擎 B 額度以週為期：用量達 95% 硬停，保留 5% 給已承諾的硬交付。</li>
+<li>優先序：有死線的交付 &gt; 已排程的常態生產 &gt; 實驗性嘗試。</li>
+<li>引擎 A 免費產能優先吃量：凡 A 能主力的類型，不佔 B 的額度。</li>
+</ul>
+<h3>6. 紀錄要求</h3>
+<p>每件產出留四項：brief 編號、分流判定（含灰區理由）、所用引擎與次數、篩選分數與最終處置。沒有紀錄的產出不進發布池——成本帳與分流表的修訂，都靠這份紀錄長出來。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
