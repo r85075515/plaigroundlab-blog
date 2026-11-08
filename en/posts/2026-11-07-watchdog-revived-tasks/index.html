@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Watchdog That Nearly Resurrected Finished Tasks: State-Machine Hygiene — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="The Watchdog That Nearly Resurrected Finished Tasks: State-Machine Hygiene">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-07-watchdog-revived-tasks/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-07-watchdog-revived-tasks/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-07-watchdog-revived-tasks/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-07-watchdog-revived-tasks/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-07">2026-11-07</time></p>
+    <ul class="post-tags"><li>agent-ops</li><li>automation</li><li>incident</li><li>state-management</li></ul>
+    <h1 class="post-title">The Watchdog That Nearly Resurrected Finished Tasks: State-Machine Hygiene</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-03-fleet.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-07-watchdog-revived-tasks.en.agent.md">English</a> · <a href="/posts/2026-11-07-watchdog-revived-tasks.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Part One: The Story, for Human Readers</h2>
+<p>We run a fleet of AI workers, and its tasks are managed as files: to-do tasks live in <code>pending/</code>, claimed tasks in <code>claimed/</code>, and finished results in <code>done/</code>. To stop a task from being stuck forever when a worker claims it and then dies, we keep a watchdog: it scans <code>claimed/</code> on a schedule, and anything that was claimed long ago with no follow-up gets moved back to <code>pending/</code> so someone else can pick it up.</p>
+<p>Sounds simple. Then, within two days, it nearly caused two serious accidents — and both times, only luck prevented one.</p>
+<p><strong>The first time (2026-10-22).</strong> The watchdog did the math by the rules: 52 tasks in <code>claimed/</code> had "been claimed for a very long time," so all 52 should be moved back to the to-do list. Fortunately, every one of those move-back writes was rejected by the server (HTTP 422) — because <code>pending/</code> already contained archived stubs with the same names, and the new files couldn't be written over them. Afterwards we opened all 52 files one by one, and every single one was <strong>a task that had long been finished</strong>: when a worker completes a task, it writes the result into <code>done/</code>, but a residual copy remains in <code>claimed/</code> — and its header plainly read "completed and archived," complete with a completion time and a PASS verdict. The watchdog only ever looked at "claim time"; it never opened a file to read its contents. If that 422 hadn't blocked it that day, 52 finished tasks would have been "resurrected" and run all over again, and their completion records would have been overwritten.</p>
+<p><strong>The second time (2026-10-23).</strong> We had already fixed the first lesson: read the file's contents before moving anything back, and skip anything carrying a completion marker. The very next day, the watchdog picked out 13 more tasks to move back — this time they were residual copies in an old format: the workers had never updated the copy in <code>claimed/</code> after finishing, so there was no completion marker and no completion time, and the format check passed them clean through. But all of them had results in <code>done/</code>; they were finished tasks. This time the lifesaver was an API rate limit (HTTP 403): the move-back never actually executed. Twice in a row, it wasn't our design that saved us — it was someone else's error messages.</p>
+<p>A bonus landmine from the same period: the workers' claim-time strings carried a region suffix (something like <code>(Phoenix)</code>), which made the standard time parser blow up and return null, and the watchdog nearly misjudged a batch of perfectly normal tasks as "unparseable zombies." The fix was to strip the trailing parenthesized suffix before parsing.</p>
+<p>The final rule fits in one sentence: <strong>the format check is a necessary condition; whether a result exists in <code>done/</code> is the sufficient condition — a task may be moved only when both pass.</strong> Before any move-back, build an index of the task IDs in <code>done/</code> from the full tree listing; any ID found in there is treated as residual and skipped, unconditionally. Add a dry-run list before moving, and a recorded reason for every move, and the watchdog has never caused friendly fire since.</p>
+<p>The second half of this article is the complete specification of this "safe reclaimer": scanning, time parsing, the dual-gate checks, the dry-run list, execution and auditing — ready to lift into any system that manages tasks with files or queues.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. The Problem Model</h3>
+<p>A file-based task system has three state directories: <code>pending/</code> (to do), <code>claimed/</code> (claimed), and <code>done/</code> (completion results). The reclaimer's job is to move "claimed, then lost contact" tasks back to <code>pending/</code>. The danger: <strong>a file in <code>claimed/</code> is not reliable evidence of claim state</strong> — the completion flow leaves residual copies behind, and those residuals come in more than one format. Using a single signal (claim time) to drive a destructive move will eventually injure finished tasks.</p>
+<h3>2. The Reclaim Decision: Three Gates, All Must Pass, in Order</h3>
+<ol>
+<li><strong>Time gate</strong>: <code>claimed_at</code> parses successfully, and the elapsed time since then exceeds the stuck-task threshold (this system uses 48 hours).</li>
+<li><strong>Content gate</strong>: read the full file — if any completion marker appears (a completion header, or a <code>done_at</code> field, or a completion-verdict field), skip it, with the reason recorded as <code>residual-with-marker</code>.</li>
+<li><strong>Result gate</strong>: build a complete index of <code>done/</code> (the set of task IDs, obtained in one pass from the version-control tree listing — do not probe file by file). If the ID is in the index, skip it, with the reason recorded as <code>residual-with-result</code>.</li>
+</ol>
+<p>Only a task that passes all three gates (old enough, no completion marker, no result in <code>done/</code>) is genuinely stuck.</p>
+<h3>3. Time-Parsing Hygiene</h3>
+<ul>
+<li>Normalize time strings first: strip any trailing parenthesized annotation (full-width and half-width parentheses both count — a region-name suffix, for example), then hand the string to the ISO parser.</li>
+<li>A parse failure does not mean "stuck": file it under the <code>unparseable</code> category — report it, never move it. Treating a parse failure as "very old" is a shortcut to friendly fire.</li>
+</ul>
+<h3>4. Execution Discipline</h3>
+<ul>
+<li><strong>Dry run first</strong>: produce the candidate list first (ID, claim time, each gate's result, planned action), and let a human or an upstream system review it before executing; even for automatic execution, keep the dry-run list on file.</li>
+<li><strong>Record every item</strong>: one line per move — ID, original path, new path, the three gates' results, time. Skipped items get their reasons recorded too.</li>
+<li><strong>Never overwrite</strong>: if a file with the same name already exists in the target directory, stop and report; do not force the write. (The first accident in this article was saved exactly by a name collision refusing the write — but that was luck; the proper practice is to check yourself first.)</li>
+<li><strong>Cap the volume</strong>: set a per-round move limit (for example, 20 items); if the candidate count is abnormally high (for example, more than 5 times the usual), report before executing — when a large number of "stuck tasks" appears all at once, it usually means the judging logic is broken, not that every worker died.</li>
+</ul>
+<h3>5. Acceptance Checklist</h3>
+<p>Given a fixture directory with four kinds of files, one of each:</p>
+<ol>
+<li>Finished, new-format residual (has a completion marker) → must be skipped.</li>
+<li>Finished, old-format residual (no marker, but <code>done/</code> holds a result with the same ID) → must be skipped.</li>
+<li>Genuinely stuck (old enough, no marker, no result in <code>done/</code>) → must be moved back.</li>
+<li>Freshly claimed (under the threshold) → must be left alone; a normal task whose time string carries a region suffix → must parse correctly and not be misjudged.</li>
+</ol>
+<p>Only when all four behaviors are correct does the reclaimer qualify.</p>
+<h3>6. General Lessons</h3>
+<ul>
+<li><strong>Destructive automation must check ground truth</strong>: before deleting, moving, or overwriting, ask the "where results live" area, not the "self-reported state" area.</li>
+<li><strong>Being saved by error messages twice is the design asking for help</strong>: 422 and 403 were both someone else's brakes; install your own.</li>
+<li><strong>Write necessary and sufficient conditions separately</strong>: whether the format looks finished (necessary) and whether a result actually exists (sufficient) are two different kinds of evidence, with different jobs; neither may impersonate the other.</li>
+</ul>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
