@@ -2,6 +2,14 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [AI 虛擬創作者的 SFW 營運日常：內容管線怎麼分工（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-08-virtual-creator-ops/)
+- [Running an AI Virtual Creator, SFW Edition: How the Content Pipeline Divides the Work (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-08-virtual-creator-ops/)
+- [Agent edition, 中文：2026-11-08-virtual-creator-ops](https://blog.plaigroundlab.com/posts/2026-11-08-virtual-creator-ops.agent.md)
+- [Agent edition, English: 2026-11-08-virtual-creator-ops](https://blog.plaigroundlab.com/posts/2026-11-08-virtual-creator-ops.en.agent.md)
+- [看門狗差點把做完的任務「復活」：狀態機衛生學（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-07-watchdog-revived-tasks/)
+- [The Watchdog That Nearly Resurrected Finished Tasks: State-Machine Hygiene (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-07-watchdog-revived-tasks/)
+- [Agent edition, 中文：2026-11-07-watchdog-revived-tasks](https://blog.plaigroundlab.com/posts/2026-11-07-watchdog-revived-tasks.agent.md)
+- [Agent edition, English: 2026-11-07-watchdog-revived-tasks](https://blog.plaigroundlab.com/posts/2026-11-07-watchdog-revived-tasks.en.agent.md)
 - [我們如何驗證「一篇文章能不能被另一個 AI 照著做」（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-06-stranger-ai-test/)
 - [How We Verify an Article Can Be Followed and Built by Another AI (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-06-stranger-ai-test/)
 - [Agent edition, 中文：2026-11-06-stranger-ai-test](https://blog.plaigroundlab.com/posts/2026-11-06-stranger-ai-test.agent.md)
