@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Running an AI Virtual Creator, SFW Edition: How the Content Pipeline Divides the Work — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Running an AI Virtual Creator, SFW Edition: How the Content Pipeline Divides the Work">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-08-virtual-creator-ops/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-08-virtual-creator-ops/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-08-virtual-creator-ops/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-08-virtual-creator-ops/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-08">2026-11-08</time></p>
+    <ul class="post-tags"><li>virtual-creator</li><li>agent-ops</li><li>orchestration</li><li>content-pipeline</li></ul>
+    <h1 class="post-title">Running an AI Virtual Creator, SFW Edition: How the Content Pipeline Divides the Work</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-01-subdomain.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-08-virtual-creator-ops.en.agent.md">English</a> · <a href="/posts/2026-11-08-virtual-creator-ops.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Part One: The Story, for Human Readers</h2>
+<p>PlAIground Lab runs an AI virtual creator. Her face is locked by one official "anchor image," and her everyday content is mostly SFW: lifestyle photos, outfit photos, short videos. This post is not about creating — it is about operating. When content volume has to be carried by a pipeline, "which content goes to which engine, who screens first, and what happens when something fails the screen" becomes the daily homework. Everything below is the real operating rules of our public-facing (SFW) production line.</p>
+<p><strong>Rule one: route by content type, not by mood.</strong> We have two image/video generation engines with different strengths. Face-led stills, fully covered lifestyle photos, and pure background assets go to Engine A (the Muse line in this article) as the primary — its face consistency is the steadiest. Content types that need body presence are Engine A's innate weakness, so Engine B (the Grok line) leads on them, with A backing up. The hardest cases are the gray zone: briefs where both face and body matter — the rule is hard-coded: B owns it, A backs up, and <strong>every routing decision gets logged</strong>, so the accounts can be settled afterward. The first-pass rate of each content type on each engine is exactly how the cost ledger grows.</p>
+<p><strong>Rule two: screen before a human ever looks.</strong> Every generated piece passes a machine screen before it reaches human selection: a face-recognition model (ArcFace) computes the similarity between the output and the anchor image, and scores fall into three bands — 0.55 and above is a candidate, 0.40–0.55 is visible to reviewers only, and below 0.40 is voided outright, not even worth showing to anyone. Humans only look at what the machine screen leaves behind; their time goes to taste judgments, not to eliminating images that are obviously off-brief. Short videos cost more, so the discipline is harder: SFW shorts are generated directly from the anchor, at most 3 tries per clip, and if all 3 fail the screen, the clip reroutes to Engine B — no infinite re-rolling. The first-pass rate of roughly 20% is a number that was written straight into the cost ledger and computed there.</p>
+<p><strong>Rule three: some things never go into the prompt.</strong> We got burned once: we put the character's body specifications into the generation prompt, and all four images in that batch were blocked by the engine's content guard. After that, the spec was split in two: the prompt field carries only the hairstyle and neutral silhouette language, while body specifications live only in the "acceptance field" — used to select images, not to generate them. A spec is an acceptance criterion, not a generation instruction; that boundary saved every batch that came after.</p>
+<p><strong>Rule four: quota is a budget, not luck.</strong> Engine B's image quota resets weekly, and production stops when it runs out, so we set a 95% hard stop line: when the quota is 95% burned, we stop, keeping the last sliver for hard deliveries; deliveries with deadlines take priority over all routine production. The line that costs no money (A) absorbs as much volume as it can, and topics that would burn quota are saved for B. This is not penny-pinching cleverness; it is insurance that the production line never breaks.</p>
+<p>Run operations long enough and you realize a virtual creator's real skill is not any single image, but this division-of-labor table: which content travels which line, what the machine screens out first, the one step where humans step in, and where the quota hits the brakes. Images are the output; the pipeline is the asset.</p>
+<p>The second half of this post is the complete spec of these routing and screening rules: the routing table, screening bands, retry caps, quota guardrails, and record requirements — ready to lift wholesale onto any "multi-engine + character consistency" content production line.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Routing Table (Classify Every Brief First, Then Assign)</h3>
+<table>
+<thead>
+<tr>
+<th>Content type</th>
+<th>Primary</th>
+<th>Backup</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Face-led SFW stills (close-ups, half-body, CG)</td>
+<td>Engine A</td>
+<td>—</td>
+<td>Consistency first</td>
+</tr>
+<tr>
+<td>Fully covered lifestyle photos (everyday outfits, street scenes)</td>
+<td>Engine A</td>
+<td>Engine B</td>
+<td>Move to B only when A's first-pass rate falls short</td>
+</tr>
+<tr>
+<td>Pure background / scene assets</td>
+<td>Engine A</td>
+<td>—</td>
+<td>No person, no consistency risk</td>
+</tr>
+<tr>
+<td>SFW everyday short videos</td>
+<td>Engine A (limited primary)</td>
+<td>Engine B</td>
+<td>A caps at 3 tries per clip (see Section 3)</td>
+</tr>
+<tr>
+<td>Types that need body presence</td>
+<td>Engine B</td>
+<td>Engine A</td>
+<td>A's first-pass rate is low on these; never the primary</td>
+</tr>
+<tr>
+<td>Gray zone (face and body presence both needed)</td>
+<td>Engine B</td>
+<td>Engine A</td>
+<td><strong>Log every decision</strong>: brief ID, decision, one-line reason</td>
+</tr>
+</tbody>
+</table>
+<h3>2. Machine Screening (Before Any Human Looks)</h3>
+<ul>
+<li>Tool: a face-recognition embedding model (ArcFace); compute the cosine similarity between each output and the official anchor image.</li>
+<li>Band handling:</li>
+<li><strong>≥ 0.55</strong>: candidate, goes to human selection.</li>
+<li><strong>0.40–0.55</strong>: visible to reviewers only; does not enter the selection pool directly.</li>
+<li><strong>&lt; 0.40</strong>: automatically voided; shown to no one.</li>
+<li>Body magnitude is also a voiding axis for stills: for body-readable lifestyle photos, if the magnitude clearly deviates from the locked spec, the image is voided no matter how high the face score (this axis is judged by the reviewer's eye and written into the selection record).</li>
+</ul>
+<h3>3. Retries and Rerouting</h3>
+<ul>
+<li>SFW short videos (Engine A): at most 3 generations per clip; if all 3 fail the screen → reroute to Engine B, no more re-rolling.</li>
+<li>Still batches: pieces that fail the screen are not regenerated within the same batch; shortfalls are made up by the next batch, and the batch record states the first-pass rate.</li>
+<li>First-pass rates are entered into the cost ledger batch by batch; if one content type on one engine runs below 10% for three consecutive batches, file a proposal to revise the routing table.</li>
+</ul>
+<h3>4. The Boundary Between Prompt and Spec</h3>
+<ul>
+<li>The prompt field carries only: hairstyle specifications (the locked wording, verbatim), neutral silhouette language (an adult woman with a defined figure and curves, in well-fitting clothes), and scene- and story-level description.</li>
+<li>Never into the prompt: body measurements and cup-size numbers, body-part adjectives — these live only in the acceptance field, used for screening and selection.</li>
+<li>If a batch that violates the boundary is intercepted by an engine guard, the whole batch is voided and entered into the incident record; no image-by-image appeals.</li>
+</ul>
+<h3>5. Quota Guardrails</h3>
+<ul>
+<li>Engine B's quota runs on a weekly cycle: hard stop at 95% usage, keeping 5% for committed hard deliveries.</li>
+<li>Priority order: deliveries with deadlines &gt; scheduled routine production &gt; experimental attempts.</li>
+<li>Engine A's free capacity eats volume first: any type A can lead never occupies B's quota.</li>
+</ul>
+<h3>6. Record Requirements</h3>
+<p>Every output keeps four items: the brief ID, the routing decision (including the gray-zone reason), the engine used and the number of attempts, and the screening score with the final disposition. An output with no record does not enter the release pool — the cost ledger and every revision of the routing table grow out of this record.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
