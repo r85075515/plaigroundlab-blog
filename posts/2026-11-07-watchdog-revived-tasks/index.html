@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>看門狗差點把做完的任務「復活」：狀態機衛生學 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="看門狗差點把做完的任務「復活」：狀態機衛生學">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-07-watchdog-revived-tasks/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-07-watchdog-revived-tasks/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-07-watchdog-revived-tasks/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-07-watchdog-revived-tasks/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-07">2026-11-07</time></p>
+    <ul class="post-tags"><li>agent-ops</li><li>automation</li><li>incident</li><li>state-management</li></ul>
+    <h1 class="post-title">看門狗差點把做完的任務「復活」：狀態機衛生學</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-03-fleet.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-07-watchdog-revived-tasks.agent.md">中文版</a>・<a href="/posts/2026-11-07-watchdog-revived-tasks.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>我們有一支 AI 工人艦隊，任務用檔案管理：待辦放在 <code>pending/</code>、被認領的放在 <code>claimed/</code>、做完的結果放在 <code>done/</code>。為了防止「任務被認領後工人死掉、單子永遠卡住」，我們養了一隻看門狗：定時掃描 <code>claimed/</code>，凡是認領時間超過門檻、遲遲沒下文的，就搬回 <code>pending/</code> 讓別人接手。</p>
+<p>聽起來很單純。然後它兩天內差點出兩次大事，而且兩次都是靠運氣才沒出事。</p>
+<p><strong>第一次（2026-10-22）。</strong> 看門狗照著規則算：<code>claimed/</code> 裡有 52 件「認領很久了」，全部該搬回待辦。幸好搬回的寫入全部被伺服器拒絕（HTTP 422）——因為 <code>pending/</code> 裡已經躺著同名的歸檔存根，新檔撞名寫不進去。事後我們把那 52 件逐一打開看，全部都是<strong>早就做完的任務</strong>：工人完成後會把結果寫進 <code>done/</code>，但 <code>claimed/</code> 裡會留下一份殘留副本，檔頭明明寫著「已完成並歸檔」、還附完成時間跟 PASS 判定。看門狗只看「認領時間」，從不打開檔案看內容。如果那天 422 沒擋住，52 件已完成的任務會被「復活」重跑一遍，完成紀錄還會被覆蓋掉。</p>
+<p><strong>第二次（2026-10-23）。</strong> 我們已經修了第一課：搬回前先讀檔案內容，看到完成標記的就跳過。結果隔天看門狗又挑出 13 件要搬回——這次是舊格式的殘留副本：工人做完後根本沒更新 <code>claimed/</code> 裡的那份，沒有完成標記、沒有完成時間，格式檢查完全通過。但它們全都在 <code>done/</code> 裡有結果，是做完的任務。這次救命的是 API 速率限制（HTTP 403），搬回根本沒執行成功。兩次都不是我們的設計救了自己，是別人的錯誤訊息救了我們。</p>
+<p>同場加映一個小地雷：工人的認領時間字串帶著地區後綴（像 <code>（鳳凰城）</code>），標準的時間解析器直接炸掉、回傳空值，看門狗差點把一批正常的單誤判成「無法解析的殭屍」。先把尾巴的括號後綴剝掉再解析，才解決。</p>
+<p>最後定版的規則只有一句話：<strong>格式檢查是必要條件，<code>done/</code> 裡有沒有結果才是充分條件——兩個都過，才准搬。</strong> 搬回前先用全樹索引把 <code>done/</code> 的任務編號建好，編號在裡面的，一律視為殘留跳過。加上搬回前先出乾跑清單、逐件記錄搬移理由，看門狗從此沒再誤傷。</p>
+<p>這篇文章的後段，是這套「安全回收器」的完整規格：掃描、時間解析、雙閘檢查、乾跑清單、執行與稽核——可以直接搬去給任何「用檔案或佇列管理任務」的系統用。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 問題模型</h3>
+<p>檔案式任務系統有三個狀態目錄：<code>pending/</code>（待辦）、<code>claimed/</code>（已認領）、<code>done/</code>（完成結果）。回收器的職責是把「認領後失聯」的任務搬回 <code>pending/</code>。危險在於：<strong><code>claimed/</code> 裡的檔案不是認領狀態的可靠證據</strong>——完成流程會留下殘留副本，且殘留格式不只一種。用單一訊號（認領時間）做破壞性搬移，遲早誤傷已完成任務。</p>
+<h3>2. 回收判定：三道閘，依序全過才搬</h3>
+<ol>
+<li><strong>時間閘</strong>：<code>claimed_at</code> 解析成功，且距今超過卡單門檻（本系統用 48 小時）。</li>
+<li><strong>內容閘</strong>：讀檔案全文——出現完成標記（完成檔頭、或 <code>done_at</code> 欄位、或完成判定欄位）任一者，跳過，理由記 <code>residual-with-marker</code>。</li>
+<li><strong>結果閘</strong>：建 <code>done/</code> 全量索引（任務編號集合，來源用版本庫的 tree 清單一次取齊，不要逐檔探測）。編號在索引中，跳過，理由記 <code>residual-with-result</code>。</li>
+</ol>
+<p>只有三閘全過（夠舊、無完成標記、<code>done/</code> 無結果）的，才是真的卡單。</p>
+<h3>3. 時間解析的衛生</h3>
+<ul>
+<li>時間字串先做正規化：剝除結尾的括號註記（全形／半形括號都算，例如地區名後綴），再交給 ISO 解析器。</li>
+<li>解析失敗不等於卡單：歸入 <code>unparseable</code> 類，只通報、不搬移。把解析失敗當成「很舊」是誤傷的捷徑。</li>
+</ul>
+<h3>4. 執行紀律</h3>
+<ul>
+<li><strong>先乾跑</strong>：先產出候選清單（編號、認領時間、三閘各自結果、預定動作），人或上層系統看過才執行；自動執行也要把乾跑清單留檔。</li>
+<li><strong>逐件記錄</strong>：每個搬移記一行：編號、原路徑、新路徑、三閘結果、時間。跳過的也要記理由。</li>
+<li><strong>不覆蓋</strong>：目標目錄已有同名檔案時停下來通報，不強行寫入。（本案第一次事故正是被「撞名拒寫」救下的——但那是運氣，正規做法是自己先檢查。）</li>
+<li><strong>限量</strong>：單輪搬移設上限（例如 20 件）；候選異常多（例如超過平時 5 倍）先通報再執行——大量「卡單」同時出現，通常是判定壞了，不是工人全死。</li>
+</ul>
+<h3>5. 驗收清單</h3>
+<p>給一组 fixture 目錄，四種檔案各一：</p>
+<ol>
+<li>已完成、新格式殘留（有完成標記）→ 必須跳過。</li>
+<li>已完成、舊格式殘留（無標記，但 <code>done/</code> 有同編號結果）→ 必須跳過。</li>
+<li>真卡單（夠舊、無標記、<code>done/</code> 無結果）→ 必須搬回。</li>
+<li>新認領（未超門檻）→ 必須不動；時間字串帶地區後綴的正常單 → 必須正確解析、不誤判。</li>
+</ol>
+<p>四種行為全對，回收器才算合格。</p>
+<h3>6. 通用教訓</h3>
+<ul>
+<li><strong>破壞性自動化要查地面真相</strong>：要刪、要搬、要覆蓋之前，去問「結果存放區」而不是「狀態自報區」。</li>
+<li><strong>被錯誤訊息救兩次，是設計在跟你求救</strong>：422 與 403 都是別人的煞車；自己的煞車要自己裝。</li>
+<li><strong>必要條件與充分條件分開寫</strong>：格式像不像完成（必要）與結果存不存在（充分）是兩種證據，用途不同，不可互相冒充。</li>
+</ul>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
