@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Script Died in Silence: Forensics and Defense Against set -e Silent Kills — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="The Script Died in Silence: Forensics and Defense Against set -e Silent Kills">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-09-sete-silent-kill/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-09-sete-silent-kill/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-09-sete-silent-kill/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-09-sete-silent-kill/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-09">2026-11-09</time></p>
+    <ul class="post-tags"><li>incident</li><li>automation</li><li>agent-ops</li></ul>
+    <h1 class="post-title">The Script Died in Silence: Forensics and Defense Against set -e Silent Kills</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d4.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-09-sete-silent-kill.en.agent.md">English</a> · <a href="/posts/2026-11-09-sete-silent-kill.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Part One: The Story, for Human Readers</h2>
+<p>In PlAIground Lab's automation pipelines, one kind of death is the hardest to investigate: a script stops halfway, its log ends at the previous line, and there is no error message, no stack trace, nothing at all — only a non-zero exit code. The first time it happened, every instinct in the team was wrong. We suspected corrupt data first, then the GPU, then the network — and only after burning half the investigation did we find the culprit: the safety mechanism the script itself had switched on, <code>set -e</code>.</p>
+<p>Here is what happened. A model-training recipe first had to count how many images were in a dataset, and it did so by listing two filename extensions together and counting the lines. The dataset held 25 images, every one of them with the same extension; the other extension matched zero files. So the shell passed the unmatched pattern, unexpanded, to <code>ls</code>; <code>ls</code> failed with exit code 2; and that line was an assignment statement hiding a command substitution. The recipe ran under <code>set -e</code> with <code>pipefail</code>, the assignment inherited the failed status of the command substitution, and the shell exited on the spot — printing nothing. That line never even wrote its own log entry; the previous line was the end of the entire log.</p>
+<p>That is the whole anatomy of a "silent kill": not a logic bug, not a broken environment, but <strong>one seemingly harmless counting line that, for one particular shape of data, triggers the instant-death clause of strict mode</strong> — and dies without leaving a single word behind.</p>
+<p>We eventually turned this class of incident into a fixed forensics-and-defense spec. The conclusions come first; the complete runbook follows.</p>
+<p><strong>First, when the three signs are all present, assume a silent kill first.</strong> The log stops at the previous line, the exit code is non-zero, and no FATAL or error string appears anywhere in the log — when all three hold at once, do not start by suspecting data, the GPU, or the network. Assume the recipe was executed by <code>set -e</code>, and walk the three localization questions. That one reordering saves the most expensive first half-hour of every incident.</p>
+<p><strong>Second, localization asks only three questions.</strong> Question one, the trap: what was the next line after the log's last line supposed to do? Question two, bisection: comment out the suspect region half by half until the single line that kills the shell is isolated. Question three, syntax: run <code>bash -n</code> and a minimal reproduction on the suspect line, and confirm whether this is a syntax problem or a runtime-status problem. Only when all three questions fail to localize it do you go back and investigate the environment.</p>
+<p><strong>Third, every new recipe opens with a defense, so the next death can speak.</strong> The defense is not to switch <code>set -e</code> off — strict mode stops far more real errors than it ever mis-kills. The defense is three things: add an ERR trap, so a failure at least prints a line number and an exit code; give key variables defaults or required-value checks, so an undefined variable does not explode in a strange place mid-script; and add <code>--fail</code> to download commands, so an HTTP error surfaces as a non-zero code on the spot instead of feeding an error page downstream as if it were a result. There is also one dedicated iron rule: <strong>never count with <code>ls</code> plus filename patterns</strong> — count with <code>find</code> and file-type conditions instead. When nothing matches, <code>find</code> simply returns 0 and exits normally; it does not kill the whole script because one extension happens to be absent.</p>
+<p><strong>Fourth, never retro-edit a proven recipe.</strong> The defense is added only to newly written or rewritten recipes. Every line of a recipe that has already run and passed acceptance is an asset; going back to "harden it while you are there" can silently change its behavior. If you want to change it, treat it as a rewrite: re-verify it completely and keep a fresh record.</p>
+<p>The more automation you run, the more common this silent death becomes, because strict mode exists precisely to "die early rather than carry an error downstream." Our answer is not to loosen the mode. It is to make every death leave at least one line behind, and to hard-code the forensics order, so the next person on duty — or the next AI — does not have to start by suspecting the GPU.</p>
+<p>The second half of this post is the complete spec: the three-sign decision table, the execution steps for the three localization questions, a line-by-line reading of the defense template, a right-versus-wrong comparison for counting code, and six scenario judgment exercises. Lift it wholesale onto any pipeline that runs long jobs under shell strict mode.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. The Prototype Incident (De-identified Reproduction)</h3>
+<ul>
+<li>The recipe ran under strict mode at its outer layer: <code>set -e</code>, with <code>pipefail</code> enabled for pipelines.</li>
+<li>The counting line was written as:</li>
+</ul>
+<pre><code class="language-bash">_n=$(ls data/*.jpg data/*.png | wc -l)
+</code></pre>
+<ul>
+<li>The shape of the data: all 25 files in the directory were <code>.jpg</code>; the number of <code>.png</code> files was 0.</li>
+<li>What happened, step by step: <code>data/*.png</code> matched no file, so the shell passed the unexpanded pattern to <code>ls</code> verbatim; <code>ls</code> failed with exit code 2 because one of its paths did not exist; the pipeline returned failure under <code>pipefail</code>; the assignment statement's status equaled the status of its command substitution; <code>set -e</code> judged the assignment failed, and the shell exited immediately, running no further logging.</li>
+<li>What an observer sees from outside: the log stops at the line before the counting line; the overall exit code is 2; the log contains no FATAL and no error string.</li>
+</ul>
+<h3>2. The Three-Sign Decision (Decide First, Then Act)</h3>
+<p>Only when all three hold do you classify the incident as a "suspected silent kill":</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Sign</th>
+<th>How to check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>The log stops at the previous line</td>
+<td>The log's last line is a normal progress message, and the output the following line should have produced is entirely absent</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>The exit code is non-zero</td>
+<td>The EXIT_CODE reported by the runner is not 0</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>No last words</td>
+<td>Searching the whole log for FATAL, error, and Traceback returns no hits</td>
+</tr>
+</tbody>
+</table>
+<p>Once the classification holds, the discipline is: localize with Section 3 first. Do not start by suspecting data, the GPU, the network, or an external service.</p>
+<h3>3. The Three Localization Questions (Execute in Order)</h3>
+<ol>
+<li><strong>The trap / line-number question</strong>: What is the next line of source after the log's last line? Does it contain an assignment plus a command substitution, a pipeline, or a subshell? If the recipe has an ERR trap, read the line number the trap printed first.</li>
+<li><strong>The bisection question</strong>: Cut the suspect region in half — comment it out, or exit early with <code>exit 0</code> to prove the script survives — and keep halving until the region shrinks to a single line.</li>
+<li><strong>The syntax and minimal-reproduction question</strong>: Run <code>bash -n</code> on the suspect line to rule out a syntax problem; then reproduce it locally with minimal data (for example, a directory holding only one extension) and confirm the trigger is the shape of the data, not the environment.</li>
+</ol>
+<p>If all three questions still fail to localize the failure, only then escalate to the environment and external dependencies, and write the results of the three questions into the record.</p>
+<h3>4. The Defense Template (New or Rewritten Recipes Only)</h3>
+<p>Every recipe opens, fixed, with:</p>
+<pre><code class="language-bash">set -euo pipefail
+trap 'echo &quot;FATAL: line $LINENO, exit $?&quot; &gt;&amp;2' ERR
+</code></pre>
+<p>Line by line:</p>
+<ul>
+<li><code>set -euo pipefail</code>: stop on any failed command, stop on any undefined variable, and count a pipeline as failed if any segment of it fails.</li>
+<li>The ERR trap: at the moment of failure, leave at least one log line carrying the line number and the exit code, so the next death can speak; the trap itself does not change the exit code and does not swallow the error.</li>
+<li>Key variables: check required variables together at the top, and give optional variables explicit defaults, so no undefined state flows into the middle of the script.</li>
+<li>Download commands: always add <code>--fail</code> (for example, <code>curl --fail</code>), so an HTTP 4xx/5xx fails with a non-zero code at download time instead of saving an error page as a result and feeding it downstream.</li>
+</ul>
+<p>Boundary: never retro-edit a recipe that has passed verification. Applying this template counts as a rewrite, and a rewrite goes through complete verification again.</p>
+<h3>5. Counting Code, Wrong and Right</h3>
+<p>The wrong way (banned):</p>
+<pre><code class="language-bash">_n=$(ls data/*.jpg data/*.png | wc -l)
+</code></pre>
+<p>The right way:</p>
+<pre><code class="language-bash">_n=$(find data -maxdepth 1 -type f \( -name &quot;*.jpg&quot; -o -name &quot;*.png&quot; \) | wc -l)
+</code></pre>
+<p>Why: when one extension is absent, <code>find</code> simply lists fewer entries and still exits 0; <code>ls</code>, by contrast, fails with a non-zero code because one of its paths does not exist, and under strict mode it takes the whole script down with it. For any "list files, then count them" need, always use the <code>find</code> version.</p>
+<h3>6. Closing Record</h3>
+<p>For every suspected silent-kill incident, record four fields: whether the three signs were all present; the line number the localization landed on and its trigger condition; whether the fix changed the idiom or added the defense; and how it was verified (whether the minimal reproduction moved from failing to passing). A fix with no record does not count as closed.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
