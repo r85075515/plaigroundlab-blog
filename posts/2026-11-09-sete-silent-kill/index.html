@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>腳本死得無聲無息：set -e 靜默處決的取證與防禦 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="腳本死得無聲無息：set -e 靜默處決的取證與防禦">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-09-sete-silent-kill/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-09-sete-silent-kill/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-09-sete-silent-kill/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-09-sete-silent-kill/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-09">2026-11-09</time></p>
+    <ul class="post-tags"><li>incident</li><li>automation</li><li>agent-ops</li></ul>
+    <h1 class="post-title">腳本死得無聲無息：set -e 靜默處決的取證與防禦</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d4.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-09-sete-silent-kill.agent.md">中文版</a>・<a href="/posts/2026-11-09-sete-silent-kill.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>PlAIground Lab 的自動化管線裡，有一類死亡最難查：腳本跑到一半停了，紀錄檔停在上一行，沒有錯誤訊息、沒有堆疊追蹤、什麼都沒有，只剩一個非零的結束碼。第一次遇到時，團隊的直覺全錯——先懷疑資料壞了、再懷疑 GPU、再懷疑網路——查了半天，才發現兇手是腳本自己開的安全機制：<code>set -e</code>。</p>
+<p>事情是這樣的。一條模型訓練配方要先數資料集有幾張圖，寫法是把兩種副檔名的檔案一起列出來再計數。資料集有 25 張圖，全部是同一個副檔名，另一個副檔名的圖一張都沒有。於是 shell 傳給 <code>ls</code> 的第二個路徑模式匹配不到任何檔案，<code>ls</code> 以結束碼 2 失敗；這行又是一個賦值語句，裡面藏著命令替換。配方外層開了 <code>set -e</code> 與 <code>pipefail</code>，賦值語句繼承了命令替換的失敗狀態，shell 當場退出——不印任何訊息。那一行甚至沒有寫完自己的紀錄，上一行就是整份紀錄的結尾。</p>
+<p>這就是「靜默處決」的全貌：不是程式邏輯錯，也不是環境壞，而是<strong>一行看似無害的計數，在特定資料形狀下觸發了嚴格模式的即死條款</strong>，而且死得不留遺言。</p>
+<p>後來我們把這類事故整理成一套固定的取證與防禦規格。先講結論，後段有完整 runbook：</p>
+<p><strong>第一，三徵兆齊備就先假設是靜默處決。</strong> 紀錄停在上一行、結束碼非零、紀錄裡找不到任何 FATAL 或錯誤字串——三個條件同時成立時，不要先懷疑資料、GPU 或網路，先假設配方被 <code>set -e</code> 處決，按定位三問往下走。這一個順序調整，省下的是每次事故最貴的前半小時。</p>
+<p><strong>第二，定位只走三問。</strong> 一問 trap：紀錄最後一行之後，下一行本來應該做什麼？二問二分：把嫌疑區段逐段註解、二分縮小，直到找出會讓 shell 退出的那一行。三問語法：對嫌疑行先跑 <code>bash -n</code> 與最小重現，確認是語法問題還是執行期狀態問題。三問走完還定位不到，才回頭查環境。</p>
+<p><strong>第三，新配方開頭必加防禦，讓下一次死亡會說話。</strong> 防禦不是把 <code>set -e</code> 關掉——嚴格模式擋住的真錯誤遠比它誤殺的多。防禦是三件事：加上 ERR trap，讓失敗時至少印出行號與結束碼；關鍵變數給預設值或必填檢查，不要讓未定義變數在奇怪的位置炸開；下載類指令加上 <code>--fail</code>，讓 HTTP 錯誤在當下就以非零碼現形，而不是把錯誤頁面當成果往下餵。還有一個專門的鐵律：<strong>計數永遠不用 <code>ls</code> 加路徑模式</strong>，改用 <code>find</code> 搭配檔案類型條件計數——找不到檔案時 <code>find</code> 回傳 0 並正常結束，不會因為某個副檔名缺席就殺掉整支腳本。</p>
+<p><strong>第四，不回改已驗證的配方。</strong> 防禦只加在新寫與重寫的配方上。已經跑通、驗收過的配方，每一行都是資產，事後回頭「順手加固」反而可能改變它的行為。要改，就當新配方處理：重新驗證、重新留紀錄。</p>
+<p>自動化跑得越多，這種無聲死亡就越常見，因為嚴格模式本來就是為了「寧可早死、不要帶錯往下跑」而設計的。我們的答案不是放寬模式，而是讓每一次死亡都留下至少一行遺言，並且把取證順序寫死，讓下一個值班的人——或下一個 AI——不用再從懷疑 GPU 開始。</p>
+<p>這篇文章的後段，是這套規格的完整版：三徵兆判定表、定位三問的執行步驟、防禦模板的逐行說明、計數寫法的正誤對照，以及六個情境判定練習。可以整套搬去套在任何用 shell 嚴格模式跑長任務的管線。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 事故原型（去識別化重現）</h3>
+<ul>
+<li>配方外層以嚴格模式執行：<code>set -e</code>，且管線開啟 <code>pipefail</code>。</li>
+<li>計數行寫法：</li>
+</ul>
+<pre><code class="language-bash">_n=$(ls data/*.jpg data/*.png | wc -l)
+</code></pre>
+<ul>
+<li>資料形狀：目錄內 25 個檔案全部為 <code>.jpg</code>，<code>.png</code> 為 0 個。</li>
+<li>發生過程：<code>data/*.png</code> 匹配不到檔案，shell 把未展開的模式原樣傳給 <code>ls</code>；<code>ls</code> 因其中一個路徑不存在以結束碼 2 失敗；管線在 <code>pipefail</code> 下回傳失敗；賦值語句的狀態等於命令替換的狀態；<code>set -e</code> 判定賦值失敗，shell 立即退出，且不執行任何後續紀錄。</li>
+<li>外部觀測：紀錄停在計數行的上一行；整體結束碼為 2；紀錄中無 FATAL、無錯誤字串。</li>
+</ul>
+<h3>2. 三徵兆判定（先判定，再動手）</h3>
+<p>同時成立才判定為「疑似靜默處決」：</p>
+<table>
+<thead>
+<tr>
+<th>編號</th>
+<th>徵兆</th>
+<th>查法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>紀錄停在上一行</td>
+<td>紀錄最後一行是正常進度訊息，其後應有的下一行輸出完全缺席</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>結束碼非零</td>
+<td>執行器回報的 EXIT_CODE 不是 0</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>無錯誤遺言</td>
+<td>全份紀錄搜尋 FATAL、error、Traceback，皆無命中</td>
+</tr>
+</tbody>
+</table>
+<p>判定成立後的紀律：先按第 3 節定位，不要先懷疑資料、GPU、網路或外部服務。</p>
+<h3>3. 定位三問（依序執行）</h3>
+<ol>
+<li><strong>Trap 行號問</strong>：紀錄最後一行之後，原始碼的下一行是什麼？它是否包含賦值加命令替換、管線、或子 shell？有 ERR trap 的配方，先看 trap 印出的行號。</li>
+<li><strong>二分註解問</strong>：把嫌疑區段從中間切開，前半段註解或提早 <code>exit 0</code> 驗證存活，逐步二分，直到縮小到單一行。</li>
+<li><strong>語法與最小重現問</strong>：對嫌疑行跑 <code>bash -n</code> 查語法；再用最小資料（例如只放單一副檔名的目錄）在本機重現，確認觸發條件是資料形狀，而不是環境。</li>
+</ol>
+<p>三問都走完仍無法定位，才升級去查環境與外部依賴，並在紀錄中寫明三問的結果。</p>
+<h3>4. 防禦模板（只用於新寫或重寫的配方）</h3>
+<p>配方開頭固定放：</p>
+<pre><code class="language-bash">set -euo pipefail
+trap 'echo &quot;FATAL: line $LINENO, exit $?&quot; &gt;&amp;2' ERR
+</code></pre>
+<p>逐行說明：</p>
+<ul>
+<li><code>set -euo pipefail</code>：任一指令失敗即停、未定義變數即停、管線任一段失敗即算失敗。</li>
+<li>ERR trap：失敗當下至少留下一行含行號與結束碼的紀錄，讓下一次死亡會說話；trap 本身不改變結束碼，也不吞錯誤。</li>
+<li>關鍵變數：必填變數在開頭集中檢查，選填變數給明確預設值，不讓未定義狀態流到中段。</li>
+<li>下載指令：一律加 <code>--fail</code>（例如 <code>curl --fail</code>），讓 HTTP 4xx／5xx 在下載當下以非零碼失敗，不要把錯誤頁面存成成果再往下游餵。</li>
+</ul>
+<p>邊界：已驗證通過的配方不回改；要套用本模板，就視為重寫，重新跑完整驗證。</p>
+<h3>5. 計數寫法正誤對照</h3>
+<p>錯誤寫法（禁用）：</p>
+<pre><code class="language-bash">_n=$(ls data/*.jpg data/*.png | wc -l)
+</code></pre>
+<p>正確寫法：</p>
+<pre><code class="language-bash">_n=$(find data -maxdepth 1 -type f \( -name &quot;*.jpg&quot; -o -name &quot;*.png&quot; \) | wc -l)
+</code></pre>
+<p>理由：<code>find</code> 在某個副檔名缺席時只是少列幾筆，結束碼仍為 0；<code>ls</code> 則會因為任一路徑不存在而以非零碼失敗，並在嚴格模式下連坐整支腳本。任何「列檔案再計數」的需求，一律用 <code>find</code> 版本。</p>
+<h3>6. 收尾紀錄</h3>
+<p>每次疑似靜默處決事故，紀錄四欄：三徵兆是否齊備、定位命中的行號與觸發條件、修法屬於改寫法還是加防禦、驗證方式（最小重現是否由失敗轉為通過）。沒有紀錄的修法不算結案。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
