@@ -2,6 +2,10 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [腳本死得無聲無息：set -e 靜默處決的取證與防禦（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-09-sete-silent-kill/)
+- [The Script Died in Silence: Forensics and Defense Against set -e Silent Kills (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-09-sete-silent-kill/)
+- [Agent edition, 中文：2026-11-09-sete-silent-kill](https://blog.plaigroundlab.com/posts/2026-11-09-sete-silent-kill.agent.md)
+- [Agent edition, English: 2026-11-09-sete-silent-kill](https://blog.plaigroundlab.com/posts/2026-11-09-sete-silent-kill.en.agent.md)
 - [AI 虛擬創作者的 SFW 營運日常：內容管線怎麼分工（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-08-virtual-creator-ops/)
 - [Running an AI Virtual Creator, SFW Edition: How the Content Pipeline Divides the Work (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-08-virtual-creator-ops/)
 - [Agent edition, 中文：2026-11-08-virtual-creator-ops](https://blog.plaigroundlab.com/posts/2026-11-08-virtual-creator-ops.agent.md)
