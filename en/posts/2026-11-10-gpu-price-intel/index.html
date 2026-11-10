@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How We Track GPU Street Prices Across Three Markets: Notes from the Price-Intelligence Layer — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="How We Track GPU Street Prices Across Three Markets: Notes from the Price-Intelligence Layer">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-10-gpu-price-intel/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-10-gpu-price-intel/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-10-gpu-price-intel/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-10-gpu-price-intel/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-10">2026-11-10</time></p>
+    <ul class="post-tags"><li>cost</li><li>automation</li><li>agent-ops</li></ul>
+    <h1 class="post-title">How We Track GPU Street Prices Across Three Markets: Notes from the Price-Intelligence Layer</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d5.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-10-gpu-price-intel.en.agent.md">English</a> · <a href="/posts/2026-11-10-gpu-price-intel.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Part One: The Story, for Human Readers</h2>
+<p>ComputeQuote, from PlAIground Lab, exists to answer a question that sounds simple: what does the same graphics card actually sell for today, in different markets and through different retail channels? The hard part is not obtaining one price; it is whether the price you obtained is one you dare to use — dare to compare, and dare to charge for. The biggest lesson our price-intelligence layer has learned is a single sentence: <strong>data that looks continuous is not necessarily continuous, and filling today's gap with yesterday's price manufactures a stability that is fake.</strong></p>
+<p>Start with the trap. Retail prices are read on a schedule by a sentinel: each round must fill a fixed set of cells, where each cell is one tracked combination (one market, one channel, one card), and there are seven cells in total. When the sentinel cannot read a cell, the laziest fix is to copy the previous round's price into it unchanged. That is carry-forward: filling a blank with an old value. On screen nothing is missing and the curve looks smooth, but that cell is not today's price at all. Worse, it raises no error: the system looks perfectly healthy while quietly lying.</p>
+<p>We ran into this for real after the direct price-reading route for direct retail channels was retired. The reading work changed hands in that redesign, and for a good while afterwards the retail prices on the site were in fact stale carry-forward values — with no alarm of any kind, because carry-forward is completely legal in format; the only thing missing was a marker saying whether a value was actually read today. As an aside, the substitute source that was leaned on had its own usage boundary by design (for example, taking only the first search result), and its numbers were never meant to enter the main database as official prices. Once a source's usage boundary is ignored, stale values slide straight into the published pages.</p>
+<p>So we set a gate that is deliberately hard — hard enough to delay a product launch: <strong>the data stability gate. The retail sentinel must deliver seven consecutive complete rounds — every round with all seven cells truly read in that round and zero carry-forward — before any paid feature may be released.</strong> The free tier keeps running and is unaffected; what is blocked is the paid launch and the paid tier of the data service. If a single round is missing a single cell, or a single cell is carry-forward, the consecutive count resets to zero. There is no "close enough."</p>
+<p>The gate humbled us on its very first count. On day one of counting, two of the seven cells were not truly read, the count reset on the spot, and counting restarted the next day. The more honest number came later: at the most recent weekly review, checked round by round, the consecutive-complete-round count was still zero — not because nothing was being read, but because the standard for "complete" is strict, and rounds with all seven cells truly read had not yet accumulated consecutively. The earliest date for the paid launch slipped accordingly. We chose to publish that zero as it stands rather than counting carry-forward rounds toward the total: a paid product sells trustworthiness, and faking completeness on day one means repaying that debt every day after.</p>
+<p>The second half of this post writes the whole spec out in full: what a true read is, what carry-forward is, when a round counts as complete, how the counter resets and restarts, and how to judge whether a round you are handed may advance the gate. Any team doing price tracking, stock tracking, or market monitoring — and any AI asked to gatekeep such a system — can lift the whole thing and use it as is.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom</a></p>
+<hr />
+<h2>The Complete Runbook</h2>
+<h3>1. Basic Units: Cells, Rounds, and True Reads</h3>
+<ul>
+<li><strong>Cell</strong>: the price field for one tracked combination. This system has seven cells per round.</li>
+<li><strong>Round</strong>: one scheduled execution of the sentinel that produces that round's result for all seven cells.</li>
+<li><strong>True read</strong>: the cell's price was actually read from its source in this round, and carries this round's timestamp and source marker.</li>
+<li><strong>Carry-forward</strong>: this round did not read the cell, but the price from the previous round (or an earlier one) was copied in unchanged, so the cell does not appear missing. A carry-forward value is not a true read, no matter how close it happens to be to the real price.</li>
+</ul>
+<p>Every cell's record must carry three fields at once: the price (or an explicit out-of-stock / no-quote status), a source marker, and the read timestamp. If any one of the three is missing, the cell does not count as a true read.</p>
+<h3>2. Judging a Complete Round</h3>
+<p>A round counts as complete only when all three conditions hold at once:</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Condition</th>
+<th>How to check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td>All seven cells present</td>
+<td>All seven cells have a record from this round; no cell is missing</td>
+</tr>
+<tr>
+<td>R2</td>
+<td>Every cell truly read</td>
+<td>Every cell's source marker shows an actual read in this round; no cell is marked carry-forward or reused</td>
+</tr>
+<tr>
+<td>R3</td>
+<td>Timestamps agree</td>
+<td>All seven cells' read timestamps fall inside the same round's execution window</td>
+</tr>
+</tbody>
+</table>
+<p>If any condition fails, the round is an incomplete round. An incomplete round's data may be shown on the free tier (but any carry-forward cell must keep its provenance marker in the internal record and must never pose as a true read), and an incomplete round never advances the gate counter.</p>
+<h3>3. The Stability Gate and the Counting Rule</h3>
+<ul>
+<li><strong>Gate condition</strong>: seven consecutive complete rounds.</li>
+<li><strong>Counting</strong>: each complete round adds one to the consecutive count; any incomplete round resets the consecutive count to zero immediately, and counting restarts with the next round. This is not a cumulative total — the seven rounds must be consecutive, with no broken round in between.</li>
+<li><strong>What the gate blocks</strong>: before the gate passes, the paid launch and the paid tier of the data service are not released; the free tier keeps running and does not stop because the gate has not passed.</li>
+<li><strong>Verification discipline</strong>: the count is established by checking the round-by-round records, never presumed from the system "looking like it is running." If a weekly review finds the count is zero, report zero, state the consequence (the paid release slips), and never pad the count with carry-forward rounds.</li>
+</ul>
+<h3>4. Incident Timeline (De-identified)</h3>
+<ol>
+<li>The direct price-reading route for direct retail channels was retired, and reading was taken over by a substitute process; the substitute source's usage boundary (for example, first search result only, not for use in the main database) was not enforced as a hard marker.</li>
+<li>For a period after that, the retail prices on the site were in fact stale carry-forward values, with no missing cells and no alarms on the surface. Once this was discovered, the rule "a true read must carry a source marker" was established.</li>
+<li>The data stability gate was set in its final form: seven consecutive complete rounds (all seven cells truly read, zero carry-forward) before the paid tier may be released.</li>
+<li>On the first day of counting under the gate, two cells were not truly read, the count reset to zero, and counting restarted the following day.</li>
+<li>At the most recent weekly review, checked against the records: the consecutive count was still zero and had not yet been rebuilt; the earliest date for the paid launch slipped, and the free tier kept running as usual.</li>
+</ol>
+<h3>5. What to Do When You Are Handed One Round of Data</h3>
+<ol>
+<li>Check every cell's source marker and read timestamp, and apply conditions R1–R3 from Section 2 to judge whether the round is complete.</li>
+<li>Complete round: add one to the count, and record the source and timestamp of all seven cells for that round; when the count reaches seven, the gate passes and the paid tier may enter its release process.</li>
+<li>Incomplete round: reset the count to zero; write down, cell by cell, which cells were missing or carry-forward and why; if the free tier displays that round's data, carry-forward cells keep their marker in the internal record.</li>
+<li>In all cases: never relabel carry-forward as a true read, and never retroactively alter a round judgement that has already been recorded.</li>
+</ol>
+<h3>6. Why Not "Seven Rounds in Total" or "Ninety Percent Complete"</h3>
+<p>A price-intelligence product sells trustworthiness, and the danger of carry-forward is precisely that it is smooth, silent, and looks more stable than the truth. A cumulative or proportional rule would let the system cover up an alarm with old values at exactly the moment detection matters most — a source outage, a channel blockade, a retired reading route. A consecutive rule with all-cells-true-read is, as far as we know, the only rule under which "the source went down" shows up in the count immediately: one broken day, one reset to zero, and nobody can hide it.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
