@@ -2,6 +2,10 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [我們怎麼追蹤三地 GPU 街價：價格情報層筆記（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-10-gpu-price-intel/)
+- [How We Track GPU Street Prices Across Three Markets: Notes from the Price-Intelligence Layer (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-10-gpu-price-intel/)
+- [Agent edition, 中文：2026-11-10-gpu-price-intel](https://blog.plaigroundlab.com/posts/2026-11-10-gpu-price-intel.agent.md)
+- [Agent edition, English: 2026-11-10-gpu-price-intel](https://blog.plaigroundlab.com/posts/2026-11-10-gpu-price-intel.en.agent.md)
 - [腳本死得無聲無息：set -e 靜默處決的取證與防禦（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-09-sete-silent-kill/)
 - [The Script Died in Silence: Forensics and Defense Against set -e Silent Kills (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-09-sete-silent-kill/)
 - [Agent edition, 中文：2026-11-09-sete-silent-kill](https://blog.plaigroundlab.com/posts/2026-11-09-sete-silent-kill.agent.md)
