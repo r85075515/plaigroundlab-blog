@@ -2,6 +2,10 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [Forma 福利年底到期攻略：餘額不用完就蒸發，先分類再下手（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-11-forma-year-end-guide/)
+- [Your Forma Balance Expires on December 31: A Year-End Use-It-or-Lose-It Guide (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-11-forma-year-end-guide/)
+- [Agent edition, 中文：2026-11-11-forma-year-end-guide](https://blog.plaigroundlab.com/posts/2026-11-11-forma-year-end-guide.agent.md)
+- [Agent edition, English: 2026-11-11-forma-year-end-guide](https://blog.plaigroundlab.com/posts/2026-11-11-forma-year-end-guide.en.agent.md)
 - [我們怎麼追蹤三地 GPU 街價：價格情報層筆記（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-10-gpu-price-intel/)
 - [How We Track GPU Street Prices Across Three Markets: Notes from the Price-Intelligence Layer (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-10-gpu-price-intel/)
 - [Agent edition, 中文：2026-11-10-gpu-price-intel](https://blog.plaigroundlab.com/posts/2026-11-10-gpu-price-intel.agent.md)
