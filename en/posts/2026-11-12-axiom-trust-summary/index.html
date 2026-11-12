@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How AI News Earns a Trustworthy Summary: Source Tiers, Cross-Checking, and Honest Labels — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="How AI News Earns a Trustworthy Summary: Source Tiers, Cross-Checking, and Honest Labels">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-12-axiom-trust-summary/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-12-axiom-trust-summary/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-12-axiom-trust-summary/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-12-axiom-trust-summary/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-12">2026-11-12</time></p>
+    <ul class="post-tags"><li>automation</li><li>workflow</li></ul>
+    <h1 class="post-title">How AI News Earns a Trustworthy Summary: Source Tiers, Cross-Checking, and Honest Labels</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d7.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-12-axiom-trust-summary.en.agent.md">English</a> · <a href="/posts/2026-11-12-axiom-trust-summary.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>Anyone can write a summary. Shrinking ten news stories to three lines each is something any model can do today; the hard part is something else: why should a reader believe those three lines? PlAIground Lab's news product, Axiom, has staked its selling point on the word "trust" from day one -- every news card carries not only a summary, but also a trust score and an honest label. This post explains how that method works, and the three lessons we learned from building it.</p>
+<p>Lesson one: <strong>Quantity is not evidence; independence is.</strong> Five outlets reporting the same event at the same time looks like fivefold confirmation; but if all five are reprinting the same wire story from the same agency, there is really only one source speaking five times. An early version of the trust algorithm treated "how many times it appeared" as "how many times it was verified," and scores were inflated by reprint volume. The fix is to count "independent sources" first: reprints from the same origin merge into one, multiple outlets under the same media group merge into one, and only reports that were independently gathered and independently published each count as one.</p>
+<p>Lesson two: <strong>A score must never override an honest label.</strong> Some topics should never earn a high score by nature: casualty events that are still developing, rumor and gossip, and unconfirmed reports of a celebrity's death. We set hard caps for these topics -- no matter how high the computed score, the cap holds it down first. More important still is the label: a card marked "Unconfirmed" must not be allowed to look highly credible on the page, even if its number is not low. The honest semantics of the label take priority over the score; that is written into the rules as a hard rule.</p>
+<p>Lesson three: <strong>Before you say it is live, actually open the finished page and read the content.</strong> For a while, our publishing acceptance checked only build status: if the pipeline finished and the build succeeded, we reported "live." Then, one time, the build was green but the content on the finished page was not the version we expected. From then on, acceptance became content verification: load the finished page at its official URL, check item by item that the headline and body really are the new version, and only then claim it is live. Build status is evidence about the process, not evidence about the content.</p>
+<p>The second half is the complete specification: the five source tiers, the four-factor scoring table, the merge rules for independent sources, the four hard caps, the priority order for honest-label decisions, the publishing gate, and the post-publication numeric consistency spot checks. Anyone responsible for vetting news summaries -- or any AI assigned that job -- can follow the whole set exactly as written.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Five Source Tiers (Reputation Tiers; Classify First When Judging)</h3>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Definition</th>
+<th>Example Types</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wire agency</td>
+<td>An original publisher whose business is supplying copy to other media</td>
+<td>International and local wire agencies</td>
+</tr>
+<tr>
+<td>Tier one</td>
+<td>International or national major newspapers and TV networks with their own reporting teams</td>
+<td>International major newspapers, national TV networks</td>
+</tr>
+<tr>
+<td>Tier two</td>
+<td>Regional or mid-sized media with an editorial desk but smaller reporting capacity</td>
+<td>Regional newspapers, online-native mid-sized media</td>
+</tr>
+<tr>
+<td>Vertical</td>
+<td>Specialist media in a specific field</td>
+<td>Technology, finance, and science specialist sites</td>
+</tr>
+<tr>
+<td>Social</td>
+<td>Personal accounts on social platforms and posts that have not passed through an editorial process</td>
+<td>Social posts, forum posts</td>
+</tr>
+</tbody>
+</table>
+<p>Classification principles: multiple outlets under the same media group count as a single source unit; reprinting someone else's copy does not change the original's tier -- the tier follows the original publisher.</p>
+<h3>2. Counting Independent Sources (Merge First, Then Count)</h3>
+<ul>
+<li>Multiple outlets reprinting the same wire agency or the same original story merge into <strong>1</strong> independent source.</li>
+<li>Multiple outlets under the same media group reporting on the same event merge into <strong>1</strong> independent source.</li>
+<li>Only reports that can be identified as independently gathered or independently published each count as 1.</li>
+<li>How to identify them: compare attribution wording in the text (phrases such as "according to a wire agency report"), similarity of headlines and key paragraphs, and the order of publication times; when independence cannot be determined, merge conservatively (count fewer, not more).</li>
+</ul>
+<h3>3. Four-Factor Scoring (Each Factor 0 to 25 Points; Total Clamped to 0 to 100)</h3>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>Scoring Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cross-checking</td>
+<td>Scored by "the number of mutually consistent independent sources": 0 sources gives 0 points, 1 gives 5 points, 2 gives 15 points, 3 or more gives 25 points. Agreement is judged only on settled core facts; a core fact that is not yet settled (for example, the casualty figures of a developing casualty event) is excluded from the judgement, counting neither as agreement nor as divergence. If independent sources substantively diverge on a settled core fact, this factor is always 5 points (see the "Accounts diverge" label in Section 5)</td>
+</tr>
+<tr>
+<td>Source diversity</td>
+<td>Scored by the number of source tier types present: 1 type gives 8 points, 2 types gives 17 points, 3 or more types gives 25 points</td>
+</tr>
+<tr>
+<td>Media reputation</td>
+<td>Scored by the highest tier present: wire agency or tier one gives 25 points, tier two gives 17 points, vertical gives 12 points, social only gives 5 points</td>
+</tr>
+<tr>
+<td>Timeliness and clarity</td>
+<td>A clear timestamp within 24 hours gives 25 points, within 72 hours gives 15 points, over 72 hours or a vague timestamp gives 5 points, no timestamp gives 0 points</td>
+</tr>
+</tbody>
+</table>
+<p>The sum of the four factors is the raw score. After the raw score, the hard caps in Section 4 and the labels in Section 5 still apply in order; neither is decoration: caps change the number directly, and labels change how the card is presented on the page directly.</p>
+<h3>4. Hard Caps: Score First, Then Cap; Never Relax</h3>
+<table>
+<thead>
+<tr>
+<th>Trigger Condition</th>
+<th>Cap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Casualty event still developing (figures or situation not yet settled)</td>
+<td>55</td>
+</tr>
+<tr>
+<td>Rumor or gossip topics</td>
+<td>55</td>
+</tr>
+<tr>
+<td>Celebrity death report not yet confirmed</td>
+<td>45</td>
+</tr>
+<tr>
+<td>Celebrity death report already confirmed to be a rumor (already debunked)</td>
+<td>55</td>
+</tr>
+</tbody>
+</table>
+<p>How to apply: final score = min(raw score, cap); when no trigger condition applies, there is no cap. The caps describe a story's current state, and states are mutually exclusive — only the row matching the current state applies: a celebrity death report is "not yet confirmed" only while it has been confirmed neither true nor false; once it is confirmed to be a rumor, its state is "already debunked" and only the 55 cap applies, never stacked with the 45. Why hard caps exist: the risk in these topics is not "how well the report is written" but "the matter itself is not settled yet"; letting the scoring table give them a high score would mean using the page layout to endorse something that is not yet settled.</p>
+<h3>5. Honest Labels (Six Types, Judged by Priority Order; Higher Wins)</h3>
+<ol>
+<li><strong>Debunked</strong>: An authoritative source has already confirmed the original report is false.</li>
+<li><strong>Unconfirmed</strong>: A celebrity death topic, not yet confirmed by a wire agency or tier-one source.</li>
+<li><strong>Accounts diverge</strong>: Two or more independent sources substantively disagree on a core fact (a key figure, whether it happened, who is responsible) -- meaning statements at the same point in time that contradict each other and cannot both be true; casualty figures in a developing event that keep updating over time and are not yet final are a situation that is unsettled, not divergence.</li>
+<li><strong>Single source only</strong>: The number of independent sources is 1.</li>
+<li><strong>Caution</strong>: The topic is a developing casualty event or rumor/gossip, and none of the higher-priority labels above applies.</li>
+<li><strong>Multiple sources agree</strong>: The number of independent sources reaches 3 or more, the accounts agree, and none of the labels above applies.</li>
+</ol>
+<p>One rule about the relationship between labels and scores is written in stone: <strong>A score can never override the honest semantics of a label.</strong> A card labeled "Debunked" or "Unconfirmed" must not be presented as highly credible, no matter what its score is.</p>
+<h3>6. The Publishing Gate and "Highly Credible" Presentation</h3>
+<ul>
+<li>For a card to be presented as "highly credible," it must satisfy both at once: final score &gt;= 70, and label "Multiple sources agree." If either fails, present it according to its actual label -- no upgrading, no blurring.</li>
+<li>A card labeled "Debunked": must not be included in trustworthy summaries; it may only appear in the corrected form of "Debunked," or be taken down directly.</li>
+<li>A card labeled "Accounts diverge": the summary must present each side's account side by side and cite the source for each item; divergent figures must not be blended into a single figure.</li>
+<li>Publishing acceptance: before claiming it is live, you must actually load the finished page at its official URL and verify that the headline and body really are the new version; looking only at build status or pipeline status does not count as completed acceptance.</li>
+</ul>
+<h3>7. After Publication: Numeric Consistency Spot Checks</h3>
+<p>Every numeric claim in a summary (amounts, headcounts, percentages, dates) must be traceable back to its source in the original text. Spot checks are handled at three levels:</p>
+<ul>
+<li><strong>L1</strong>: A number's direction is reversed (a rise written as a fall, an increase written as a decrease) or a number that does not exist in the original at all (fabricated) -- report it the same day and take the card down for rewriting.</li>
+<li><strong>L2</strong>: A number has a source but was copied incorrectly or has a unit error -- record and correct it; if the L2 rate in spot checks within the same week exceeds ten percent, trigger a process review.</li>
+<li><strong>L3</strong>: Rounding or presentation-level minor differences that do not change the original meaning -- record only.</li>
+</ul>
+<h3>8. Common Mistakes Checklist</h3>
+<ul>
+<li>Treating reprint volume as verification volume: five outlets reprint the same story, and the score is given as if there were five sources.</li>
+<li>Looking only at the score and not the label: placing an "Unconfirmed" card into the highly credible section.</li>
+<li>Smoothing over divergence: two outlets give different figures, and the summary picks only one to write, so readers never see that divergence exists.</li>
+<li>Claiming it is live based only on build status: the pipeline is green, but the content on the finished page is the old version.</li>
+</ul>
+<p>Disclaimer: The trust scores in this post are an editorial heuristic ranking tool, not a fact-checking conclusion; scores and labels help readers judge how much trust to place in a summary while reading it, and do not guarantee that any single report is true. Data date: 2026-11-12. Source material: the trust score design records and daily operations records of PlAIground Lab's news product Axiom (de-identified and organized).</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
