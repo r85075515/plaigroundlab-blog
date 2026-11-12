@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 新聞怎麼做到「可信任摘要」：來源分級、交叉驗證與誠實標籤 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="AI 新聞怎麼做到「可信任摘要」：來源分級、交叉驗證與誠實標籤">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-12-axiom-trust-summary/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-12-axiom-trust-summary/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-12-axiom-trust-summary/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-12-axiom-trust-summary/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-12">2026-11-12</time></p>
+    <ul class="post-tags"><li>automation</li><li>workflow</li></ul>
+    <h1 class="post-title">AI 新聞怎麼做到「可信任摘要」：來源分級、交叉驗證與誠實標籤</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d7.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-12-axiom-trust-summary.agent.md">中文版</a>・<a href="/posts/2026-11-12-axiom-trust-summary.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>摘要誰都會寫。把十則新聞各縮成三行，現在任何模型都做得到；難的是另一件事：讀者憑什麼相信這三行？PlAIground Lab 的新聞產品 Axiom 從第一天就把賣點押在「信任」兩個字上——每一張新聞卡除了摘要，還要附一個信任分數和一個誠實標籤。這篇講這套方法怎麼運作，以及我們在它身上學到的三課。</p>
+<p>第一課：<strong>數量不是證據，獨立才是。</strong> 五家媒體同時報了同一件事，看起來像五重確認；但如果五家都是轉載同一家通訊社的同一篇稿，那其實只有一個信源講了五次。早期的信任算法把「出現幾次」當成「被驗證幾次」，分數被轉載量灌水。修法是先數「獨立信源」：同源轉載合併計一、同一媒體集團旗下的多家 outlet 合併計一，只有各自獨立採訪、獨立發稿的，才各自算一個。</p>
+<p>第二課：<strong>分數永遠不能蓋過誠實標籤。</strong> 有些題材天生不該拿到高分：還在發展中的傷亡事件、謠言八卦、未經證實的名人死訊。我們給這類題材設了硬上限——分數算出來再高，也先被上限壓住。更重要的是標籤：一張標著「未確認」的卡，就算數字不低，也不准在版面上看起來像高可信。標籤的誠實語義優先於分數，這是寫死在規則裡的。</p>
+<p>第三課：<strong>說上線之前，先真的打開成品頁看內容。</strong> 有一段時間，我們驗收發布只看建置狀態：流程跑完、建置成功，就回報「已上線」。結果有一次建置是綠的，成品頁上的內容卻不是預期的那一版。從此驗收改成內容驗證：用正式網址實際載入成品頁，逐項核對標題與內文確實是新版，才准宣稱上線。建置狀態是流程的證據，不是內容的證據。</p>
+<p>後段是完整規格：來源五級分類、四個因子的計分表、獨立信源的合併規則、四道硬上限、誠實標籤的判定優先序、上架閘門，以及發布後的數字一致性抽查。任何要替新聞摘要把關的人——或任何被交代這項工作的 AI——都可以整套照著做。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 來源五級（聲譽層級，判定時先歸類）</h3>
+<table>
+<thead>
+<tr>
+<th>層級</th>
+<th>定義</th>
+<th>例子型態</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>通訊社</td>
+<td>以供稿給其他媒體為本業的原始發稿者</td>
+<td>國際與本地通訊社</td>
+</tr>
+<tr>
+<td>一線</td>
+<td>有自家採訪團隊的國際或全國性大報與電視台</td>
+<td>國際大報、全國電視網</td>
+</tr>
+<tr>
+<td>二線</td>
+<td>區域性或中型媒體，有編輯台但採訪能量較小</td>
+<td>區域報、網路原生中型媒體</td>
+</tr>
+<tr>
+<td>垂直</td>
+<td>特定領域的專業媒體</td>
+<td>科技、財經、科學專業站</td>
+</tr>
+<tr>
+<td>社群</td>
+<td>社群平台上的個人帳號與未經編輯流程的發文</td>
+<td>社群貼文、論壇發文</td>
+</tr>
+</tbody>
+</table>
+<p>歸類原則：同一媒體集團旗下的多家 outlet 視為同一個來源單位；轉載他人的稿件不改變原稿的層級，層級跟著原稿的發稿者走。</p>
+<h3>2. 獨立信源計數（先合併，再計數）</h3>
+<ul>
+<li>多家 outlet 轉載同一家通訊社或同一篇原稿，合併計為 <strong>1</strong> 個獨立信源。</li>
+<li>同一媒體集團的多家 outlet 對同一事件的報導，合併計為 <strong>1</strong> 個獨立信源。</li>
+<li>只有能辨識為各自獨立採訪或獨立發稿的報導，才各自計 1 個。</li>
+<li>辨識方法：比對內文的溯源語句（「據某通訊社報導」類字樣）、標題與關鍵段落的相似度、發稿時間的先後；無法辨識是否獨立時，保守合併（計少不計多）。</li>
+</ul>
+<h3>3. 四因子計分（每項 0 至 25 分，合計後 clamp 至 0 至 100）</h3>
+<table>
+<thead>
+<tr>
+<th>因子</th>
+<th>計分規則</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>交叉驗證</td>
+<td>以「互相一致的獨立信源數」計：0 個給 0 分、1 個給 5 分、2 個給 15 分、3 個以上給 25 分。一致性只對已定案的核心事實判定；尚未定案的核心事實（例如發展中傷亡的傷亡數字）不列入判定，既不計一致、也不計分歧。若獨立信源之間對已定案核心事實有實質分歧，本項一律給 5 分（見第 5 節標籤「敘述有分歧」）</td>
+</tr>
+<tr>
+<td>來源多樣性</td>
+<td>以出現的來源層級種類數計：1 種給 8 分、2 種給 17 分、3 種以上給 25 分</td>
+</tr>
+<tr>
+<td>媒體聲譽</td>
+<td>以在場最高層級計：通訊社或一線給 25 分、二線給 17 分、垂直給 12 分、只有社群給 5 分</td>
+</tr>
+<tr>
+<td>時效與清晰度</td>
+<td>有明確時間戳且在 24 小時內給 25 分、72 小時內給 15 分、超過 72 小時或時間戳模糊給 5 分、無時間戳給 0 分</td>
+</tr>
+</tbody>
+</table>
+<p>四項合計即為原始分。原始分之後還要依序過第 4 節的硬上限與第 5 節的標籤，兩者都不是裝飾：上限直接改數字，標籤直接改版面呈現方式。</p>
+<h3>4. 硬上限（cap）：先算分，再壓頂，絕不放寬</h3>
+<table>
+<thead>
+<tr>
+<th>觸發條件</th>
+<th>上限</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>傷亡事件仍在發展中（數字或情勢未定）</td>
+<td>55</td>
+</tr>
+<tr>
+<td>謠言或八卦類題材</td>
+<td>55</td>
+</tr>
+<tr>
+<td>名人死訊未經證實</td>
+<td>45</td>
+</tr>
+<tr>
+<td>名人死訊已被證實為謠言（已被打臉）</td>
+<td>55</td>
+</tr>
+</tbody>
+</table>
+<p>套用方式：最終分數 = min（原始分，上限）；沒有觸發條件時不壓。上限描述的是題材的目前狀態，狀態互斥、只套當下那一列：名人死訊「未經證實」指尚未證實為真、也尚未證實為假；一旦被證實為謠言，狀態就是「已被打臉」，只套 55，不疊加 45。硬上限存在的理由：這類題材的風險不在「報導寫得好不好」，而在「事情本身還沒定」；讓計分表把它打高分，等於用版面替未定的事情背書。</p>
+<h3>5. 誠實標籤（六種，按優先序判定，高者先贏）</h3>
+<ol>
+<li><strong>已被打臉</strong>：有權威來源已證實原報導為假。</li>
+<li><strong>未確認</strong>：名人死訊類題材，尚無通訊社或一線來源證實。</li>
+<li><strong>敘述有分歧</strong>：兩個以上獨立信源對核心事實（關鍵數字、是否發生、責任歸屬）說法實質不同——指同一時間點上互相矛盾、不能同時為真的說法；發展中傷亡的數字隨時間更新、尚未定案，是情勢未定，不算分歧。</li>
+<li><strong>僅單一來源</strong>：獨立信源數為 1。</li>
+<li><strong>審慎</strong>：題材屬發展中傷亡或謠言八卦，且未觸發以上更高優先序的標籤。</li>
+<li><strong>多源一致</strong>：獨立信源數達 3 個以上、說法一致、且未觸發以上任一標籤。</li>
+</ol>
+<p>標籤與分數的關係寫死一條：<strong>分數永遠不能覆蓋標籤的誠實語義。</strong> 標籤是「已被打臉」或「未確認」的卡，無論分數多少，都不准以高可信的樣貌呈現。</p>
+<h3>6. 上架閘門與「高可信」呈現</h3>
+<ul>
+<li>一張卡要以「高可信」樣貌呈現，須同時滿足：最終分數 ≥ 70，且標籤為「多源一致」。任一不成立，就照它實際的標籤呈現，不升級、不模糊。</li>
+<li>標籤為「已被打臉」的卡：不得列入可信任摘要；只能以「已被打臉」的更正形態出現，或直接下架。</li>
+<li>標籤為「敘述有分歧」的卡：摘要必須並列各方說法並逐項標明出處，不准把分歧的數字揉成一個數字寫。</li>
+<li>發布驗收：宣稱上線前，必須用正式網址實際載入成品頁，核對標題與內文確實為新版內容；只看建置狀態或流程狀態，不算驗收完成。</li>
+</ul>
+<h3>7. 發布後：數字一致性抽查</h3>
+<p>摘要裡的每個數字聲明（金額、人數、百分比、日期）都要能對回原文出處。抽查分三級處置：</p>
+<ul>
+<li><strong>L1</strong>：數字方向反轉（漲寫成跌、增寫成減）或原文根本沒有的數字（編造）——當日通報並將該卡下架重寫。</li>
+<li><strong>L2</strong>：數字有出處但抄錯或單位錯誤——記錄並修正；同一週的抽查中 L2 發生率超過一成，啟動流程複盤。</li>
+<li><strong>L3</strong>：四捨五入或呈現層級的小差異，不影響原意——僅記錄。</li>
+</ul>
+<h3>8. 常見錯誤清單</h3>
+<ul>
+<li>把轉載量當驗證量：五家轉同一篇稿，分數照著五家給。</li>
+<li>只看分數不看標籤：把「未確認」的卡排進高可信區。</li>
+<li>把分歧揉平：兩家數字不同，摘要只挑一個寫，讀者看不到分歧存在。</li>
+<li>只看建置狀態就宣稱上線：流程是綠的，成品頁內容卻是舊版。</li>
+</ul>
+<p>免責：本篇信任分數是編輯用的啟發式排序工具，不是事實查核結論；分數與標籤協助讀者判斷該用多少信任閱讀一則摘要，不保證任何單一報導為真。資料日期：2026-11-12。素材來源：PlAIground Lab 新聞產品 Axiom 的信任分數設計紀錄與日常維運紀錄（去識別化整理）。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
