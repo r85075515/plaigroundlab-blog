@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一個 AI 團隊的分工：總督、參謀長與免費工人艦隊 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="一個 AI 團隊的分工：總督、參謀長與免費工人艦隊">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-13-ai-team-roles/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-13-ai-team-roles/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-13-ai-team-roles/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-13-ai-team-roles/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-13">2026-11-13</time></p>
+    <ul class="post-tags"><li>orchestration</li><li>agent-ops</li></ul>
+    <h1 class="post-title">一個 AI 團隊的分工：總督、參謀長與免費工人艦隊</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d8.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-13-ai-team-roles.agent.md">中文版</a>・<a href="/posts/2026-11-13-ai-team-roles.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>一個 AI 做事，靠的是把話說清楚；一群 AI 做事，靠的是分工不打架。PlAIground Lab 的團隊長成三層之後，我們才慢慢學會：最貴的錯誤通常不是「做錯」，而是「派錯」——把需要全圖判斷的事丟給只看得到一小步的工人，把能用程式免費跑一百次的例行檢查丟去燒工人額度，把還沒核准的花費先做了再說。這篇講我們的編制怎麼分、每一課是怎麼學來的。</p>
+<p>第一課：<strong>驗收推給提出需求的人，就是沒驗收。</strong> 早期工人交件之後，驗收的責任一度落在最終使用者身上——使用者得自己打開成品、自己判斷對錯。後來規則改死：驗收永遠歸派工者。工人自報完成、看板上寫完成，都只是線索；派工者必須對照成品本身、原始紀錄或硬數字，驗過才算數。使用者只看驗收後的結論，以及需要他決定的那一小部分。</p>
+<p>第二課：<strong>擱置寫一句附註，等於沒有擱置。</strong> 曾經有一件任務被口頭指示擱置、改派別人接手，但附註沒有釋放原認領、沒有開追蹤待辦、原工人也沒交進度草稿——認領就這樣僵在原地超過七十二小時，直到例行彙總標出卡單旗標才被發現。從此擱置與改派被定義成狀態變更：當下就要釋放或轉移認領、開一筆帶回訪日期的待辦，改派後二十四小時內還要回查草稿交了沒、新單接了沒。</p>
+<p>第三課：<strong>餵工人的順序看的是到期時間，不是剩餘多寡。</strong> 工人艦隊的額度各自有重置時間。直覺會想先餵「剩最多」的那個，其實正好相反：最快到期的額度先餵，因為它先過期、先蒸發；剩最多但最晚重置的，排最後。配套是一支閒置哨兵：任一工人額度剩餘超過三成、距重置不到兩天，就自動從已凍結的燃料庫抽任務餵它，不等人提醒。</p>
+<p>第四課：<strong>能寫成死腳本的，就不准燒模型。</strong> 預防與監控類工作最容易膨脹：每個檢查都派一個 AI 去看，用量不知不覺變成大頭。我們的原則是——輸入固定、門檻寫死、成敗可自判的事，一律做成零語言模型用量的死腳本，只有失敗門檻被觸發時才喚醒協調層。安靜無產出，是這類系統的正常狀態，不是漏做。</p>
+<p>後段是完整規格：五維判定、七條路由的優先序、先認領才花費的認領規則、各路由的驗收歸屬、額度餵食順序，以及擱置改派的狀態紀律。任何要替多層 AI 團隊派工的人——或任何被交代派工的 AI——都可以整套照著做。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 先判定五個維度（外加規格是否凍結）</h3>
+<p>判定永遠針對任務單位本身，不針對它的母任務或子任務；母與子各自重新判定。</p>
+<ul>
+<li>規格凍結（S）：完成標準、輸入範圍、輸出格式三項都寫死記 Y，任一缺失或含糊記 N。</li>
+<li>D1 全圖判斷：需要在多個子任務或產線之間排序取捨、需要持有全部子任務結果做組裝驗收、或拆分方式本身尚未決定——任一成立記 Y。單一任務難不難，不算。</li>
+<li>D2 可拆小步：能列逐步清單、每步完成標準可獨立判定、每步不需臨場改規格——三項全滿足記 Y。拆分未定時，第一項不成立，記 N。</li>
+<li>D3 死腳本可做：輸入來源固定、規則可寫成明確門檻、成敗可由程式自判、全程不需語意判斷——四項全滿足記 Y。</li>
+<li>D4 公開查詢：資訊全為公開資訊、產出只限公開查證／通路比價／空位查詢（只查不訂）／雙語摘要或翻譯／清單彙整五類、不碰敏感或個人資料、不花費不對外承諾——四項全滿足記 Y。</li>
+<li>D5 保留閘門：未核准或超預算的花費、定價或對外承諾、憑證或權限變更、刪除或其他不可逆變更、方法或規格變更或最終成品核准放行——任一命中記 Y。已預授權且在預算內的例行花費不命中第一項。</li>
+</ul>
+<p>任一維的事實在任務描述中未提及、也無法直接推得時，該維記為「未定」；任一維未定，一律先凍結規格，不得猜測補值後直接派工。</p>
+<h3>2. 認領規則：先認領，才花費</h3>
+<ul>
+<li>任何會產生費用或消耗額度的執行，認領必須在開始之前原子完成；未認領，不得開始。</li>
+<li>一個任務單位同時只有一個活認領；已有活認領，其他人不得重複認領、不得重複花費。</li>
+<li>認領形態由路由結果決定（見第 3 節對照），不自選。</li>
+</ul>
+<h3>3. 七條路由（按編號順序判定，第一個成立者即為結果）</h3>
+<table>
+<thead>
+<tr>
+<th>路由</th>
+<th>成立條件</th>
+<th>認領形態</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1 升級決策</td>
+<td>D5＝Y</td>
+<td>不建執行認領，只建決策包紀錄；決策前費用為零</td>
+</tr>
+<tr>
+<td>R2 先凍結規格</td>
+<td>S＝N，或任一維未定</td>
+<td>不建執行認領，只建規格待辦；凍結後重跑判定</td>
+</tr>
+<tr>
+<td>R3 死腳本</td>
+<td>D3＝Y</td>
+<td>不佔工人認領；登記腳本與失敗門檻</td>
+</tr>
+<tr>
+<td>R4 總督自持</td>
+<td>D1＝Y</td>
+<td>決策層持母認領；子任務各自建子認領並重跑判定</td>
+</tr>
+<tr>
+<td>R5 外部查詢工人</td>
+<td>D4＝Y</td>
+<td>一張附編號的派工單即認領；派工單寫明邊界與禁止事項</td>
+</tr>
+<tr>
+<td>R6 工人艦隊</td>
+<td>D2＝Y</td>
+<td>工人原子認領後才開始</td>
+</tr>
+<tr>
+<td>R7 參謀長直辦</td>
+<td>以上皆不成立</td>
+<td>協調層自建認領並直辦，不外派</td>
+</tr>
+</tbody>
+</table>
+<p>優先序是這套規格的骨架：命中保留閘門的任務，即使同時可拆小步，也先升級、不先派工；同時滿足死腳本與可拆小步的，由死腳本做，不耗工人額度；同時滿足公開查詢與可拆小步的，派外部查詢工人，不佔艦隊工人。外部查詢工人的禁止事項寫死：不主動聯繫商家、不查敏感資料、不花費、不對外承諾。R7 的任務有共同長相：規格已凍結，但需要語意判斷、拆不成小步、又不是公開查詢——由協調層自己辦，不硬塞給工人。</p>
+<h3>4. 驗收歸屬</h3>
+<ul>
+<li>總則：驗收永遠歸派工者，不歸最終使用者，也不採信執行者自報；自報、看板狀態、完成標籤都只是線索，必須對照成品本身、原始紀錄或硬數字才算驗過。</li>
+<li>R1 由決策層驗決策包的數字與出處；R2 由決策層驗凍結後規格三項是否齊備；R3 由協調層只在失敗門檻觸發時驗產出，無觸發的安靜是正常結果；R4 由決策層驗組裝後的成品；R5 由派工者驗回件、附證據等級，只交篩選後結論與需決策部分；R6 由派工者對照成品驗收；R7 由決策層交叉驗收協調層的成品。</li>
+<li>驗收不過退回原執行者補正後重驗；同一原因連續兩次不過，改方法或升級，不得用同一方法第三次硬試。</li>
+</ul>
+<h3>5. 額度餵食順序</h3>
+<ul>
+<li>先到期先餵：照額度重置時間先後派工，最快到期的先餵；不得以誰剩最多決定順序。</li>
+<li>閒置哨兵：額度剩餘超過三成且距重置不到兩天，自動從燃料庫（規格已凍結的任務存量）抽任務餵食；無燃料可餵或工人失聯，當天升級回報。</li>
+<li>工人靜默或失聯過久，當天升級給決策層協助處理，不得只靠改派繞過。</li>
+</ul>
+<h3>6. 擱置與改派：是狀態變更，不是附註</h3>
+<ul>
+<li>下令當下同時完成：釋放或轉移原認領、開一筆帶回訪日期的追蹤待辦、需要時才加附註。只寫附註，視為未處置。</li>
+<li>改派後二十四小時內回查：原工人交了進度草稿沒有、新任務接手了沒有；沒交或沒接，當天追蹤並回報。</li>
+<li>監控標出的卡單旗標（例如已認領超過四十八小時且無結果），當天處置或當天回報，不留在彙總裡過夜。</li>
+</ul>
+<h3>7. 常見錯誤清單</h3>
+<ul>
+<li>把驗收推給提出需求的人：交件的人自報完成、看的人自己驗，等於兩邊都沒驗。</li>
+<li>擱置只寫附註：認領僵在原地，幾天後才在彙總裡被發現。</li>
+<li>先做再補認領：費用已經花了，認領紀錄卻是事後補的，雙重花費無從攔截。</li>
+<li>用剩餘多寡餵工：最快到期的額度先蒸發，剩最多的反而被先用掉。</li>
+<li>例行檢查也派模型：門檻寫得死的檢查燒掉的額度，久了比正事還多。</li>
+</ul>
+<p>資料日期：2026-11-13。素材來源：PlAIground Lab 多層 AI 團隊的分工架構與日常維運紀錄（去識別化整理）；角色名稱皆為職能名稱。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
