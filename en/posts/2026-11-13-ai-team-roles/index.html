@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How an AI Team Divides the Work: The Governor, the Chief of Staff, and a Free Worker Fleet — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="How an AI Team Divides the Work: The Governor, the Chief of Staff, and a Free Worker Fleet">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-13-ai-team-roles/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-13-ai-team-roles/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-13-ai-team-roles/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-13-ai-team-roles/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-13">2026-11-13</time></p>
+    <ul class="post-tags"><li>orchestration</li><li>agent-ops</li></ul>
+    <h1 class="post-title">How an AI Team Divides the Work: The Governor, the Chief of Staff, and a Free Worker Fleet</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d8.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-13-ai-team-roles.en.agent.md">English</a> · <a href="/posts/2026-11-13-ai-team-roles.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>One AI doing work runs on clear instructions; a group of AIs doing work runs on a division of labor that does not collide. After PlAIground Lab's team grew into three layers, we learned slowly that the most expensive mistakes are usually not "doing it wrong" but "dispatching it wrong" -- handing work that needs whole-picture judgement to a worker who can only see one small step, handing a routine check that a program could run a hundred times for free to quota-burning workers, or doing unapproved spending first and asking later. This post explains how our organization is divided, and how each lesson was learned.</p>
+<p>Lesson one: <strong>Pushing verification onto the person who requested the work is the same as not verifying at all.</strong> Early on, after workers delivered, verification responsibility briefly landed on the end user -- the user had to open each deliverable and judge it alone. The rule was then fixed in stone: verification always belongs to the dispatcher. A worker's self-report of completion, or a board that says "done," is only a clue; the dispatcher must check the deliverable itself, the original records, or hard numbers before anything counts as verified. The user sees only the post-verification conclusions, plus the small part that needs their decision.</p>
+<p>Lesson two: <strong>Shelving a task with one note is the same as not shelving it at all.</strong> Once, a task was verbally ordered shelved and reassigned, but the note did not release the original claim, no tracked todo was opened, and the original worker never filed a progress draft -- the claim sat frozen in place for more than seventy-two hours, until a routine summary flagged it as stuck. From then on, shelving and reassignment are defined as a state change: at that same moment, release or transfer the claim and open a tracked todo carrying a revisit date, and within twenty-four hours after reassignment, recheck whether the draft was filed and the new task was picked up.</p>
+<p>Lesson three: <strong>The order for feeding workers is expiry time, not how much is left.</strong> Each worker quota in the fleet has its own reset time. Intuition says to feed "whoever has the most left" first; the truth is the opposite: the quota that expires soonest is fed first, because it expires first and evaporates first; the quota with the most remaining but the latest reset goes last. The matching mechanism is an idle sentinel: when any worker's quota has more than thirty percent remaining and less than two days remain before its reset, frozen tasks are drawn automatically from the fuel store to feed it, without waiting for anyone's reminder.</p>
+<p>Lesson four: <strong>Anything that can be written as a dead script must not burn a model.</strong> Prevention and monitoring work expands the most easily: dispatch an AI to look at every check, and usage quietly becomes the biggest line item. Our principle is that work with a fixed input, a written threshold, and a self-judgeable outcome is always built as a dead script at zero language-model usage, and only a triggered failure threshold wakes the coordination layer. Silence with no output is this kind of system's normal state, not a missed job.</p>
+<p>The second half is the complete specification: the five-dimension judgement, the priority order of the seven routes, the claim-first rule, the verification owner for each route, the quota feeding order, and the state discipline for shelving and reassignment. Anyone dispatching work for a multi-layer AI team -- or any AI assigned to dispatch -- can follow the whole set exactly as written.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Judge Five Dimensions First (Plus Whether the Spec Is Frozen)</h3>
+<p>Judgement always targets the task unit itself, never its parent task or its sub-tasks; parent and sub-tasks are each judged afresh.</p>
+<ul>
+<li>Spec frozen (S): Record Y when completion criteria, input scope, and output format are all written down and fixed; record N when any one is missing or vague.</li>
+<li>D1 Whole-picture judgement: Record Y if any one holds -- the task requires ranking or trading off among multiple sub-tasks or production lines, requires holding all sub-tasks' results for assembly verification, or the way it will be split has not yet been decided. How hard a single task is does not count.</li>
+<li>D2 Splittable into small steps: Record Y only if all three hold -- a step-by-step list can be written, each step's completion criteria can be judged independently, and no step requires changing the spec on the fly. When the split is undecided, the first item fails and the record is N.</li>
+<li>D3 Dead-scriptable: Record Y only if all four hold -- the input source is fixed, the rules can be written as explicit thresholds, completion or failure can be judged by the program itself, and no semantic judgement is needed at any point.</li>
+<li>D4 Public query: Record Y only if all four hold -- all information needed is public, the output is limited to public verification, channel price comparison, availability checking (checking only, never booking), bilingual summary or translation, or list compilation, no sensitive or personal data is involved, and no spending or external commitment is needed.</li>
+<li>D5 Reserved gate: Record Y if any one is hit -- unapproved or over-budget spending, pricing or an external commitment, a change to credentials or permissions, deletion or any other irreversible change, or a change to the method or spec itself or the approval and release of a final deliverable. Pre-authorized routine spending within budget does not hit the first item.</li>
+</ul>
+<p>When the facts a dimension needs are not mentioned in the task description and cannot be directly inferred, record that dimension as "undetermined"; if any dimension is undetermined, always freeze the spec first, and never guess a value in order to dispatch directly.</p>
+<h3>2. Claim Rules: Claim First, Spend Second</h3>
+<ul>
+<li>For any execution that produces cost or consumes quota, the claim must be completed atomically before execution begins; without a claim, execution must not begin.</li>
+<li>A task unit has only one live claim at a time; while a live claim exists, no one else may claim it again or spend on it again.</li>
+<li>The claim form is determined by the routing result (see the table in Section 3); executors do not choose their own form.</li>
+</ul>
+<h3>3. Seven Routes (Judged in Number Order; the First That Holds Is the Result)</h3>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Condition</th>
+<th>Claim form</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1 Escalate for a decision</td>
+<td>D5 = Y</td>
+<td>No execution claim; only a decision-pack record; cost stays at zero before the decision</td>
+</tr>
+<tr>
+<td>R2 Freeze the spec first</td>
+<td>S = N, or any dimension undetermined</td>
+<td>No execution claim; only a spec todo; re-run the judgement after freezing</td>
+</tr>
+<tr>
+<td>R3 Dead script</td>
+<td>D3 = Y</td>
+<td>No worker claim; register the script and its failure thresholds</td>
+</tr>
+<tr>
+<td>R4 Governor holds it</td>
+<td>D1 = Y</td>
+<td>The decision layer holds the parent claim; each sub-task creates its own sub-claim and is judged afresh</td>
+</tr>
+<tr>
+<td>R5 External query worker</td>
+<td>D4 = Y</td>
+<td>One numbered assignment sheet is the claim; the sheet states the boundary and the prohibitions</td>
+</tr>
+<tr>
+<td>R6 Worker fleet</td>
+<td>D2 = Y</td>
+<td>A worker takes the task by atomic claim before anything begins</td>
+</tr>
+<tr>
+<td>R7 Chief of Staff handles it directly</td>
+<td>None of the above holds</td>
+<td>The coordination layer creates its own claim and handles it directly, without dispatching</td>
+</tr>
+</tbody>
+</table>
+<p>The priority order is the skeleton of this specification: a task that hits a reserved gate is escalated first even if it is also splittable into small steps, and is never dispatched first; a task that satisfies both dead-scriptable and splittable is done by the dead script and consumes no worker quota; a task that satisfies both public query and splittable goes to the external query worker and does not occupy a fleet worker. The external query worker's prohibitions are written in stone: no proactively contacting merchants, no looking up sensitive data, no spending, no external commitments. R7 tasks share one shape: the spec is frozen, but the work needs semantic judgement, cannot be split into small steps, and is not a public query -- the coordination layer handles them itself instead of forcing them onto workers.</p>
+<h3>4. Verification Ownership</h3>
+<ul>
+<li>General rule: Verification always belongs to the dispatcher, never to the end user, and an executor's self-report is never accepted; self-reports, board status, and completion labels are all only clues, and verification must check the deliverable itself, the original records, or hard numbers.</li>
+<li>R1: the decision layer verifies the numbers and sources in the decision pack; R2: the decision layer verifies that the frozen spec's three items are all present; R3: the coordination layer verifies output only when a failure threshold triggers, and silence with no trigger is a normal result; R4: the decision layer verifies the assembled deliverable; R5: the dispatcher verifies the return, attaches an evidence grade, and passes up only the filtered conclusions and the parts needing a decision; R6: the dispatcher verifies against the deliverable itself; R7: the decision layer cross-verifies the coordination layer's deliverable.</li>
+<li>When verification fails, the work returns to the original executor for correction and is verified again; when it fails twice in a row for the same cause, the method changes or the matter is escalated -- the same method is not tried a third time by force.</li>
+</ul>
+<h3>5. Quota Feeding Order</h3>
+<ul>
+<li>Earliest-expiry first: dispatch follows each quota's reset time, feeding the soonest-expiring quota first; order is never decided by who has the most left.</li>
+<li>Idle sentinel: when a quota has more than thirty percent remaining and less than two days remain before its reset, frozen tasks are drawn automatically from the fuel store (the stock of spec-frozen tasks) to feed it; when there is no fuel to feed, or a worker is unreachable, escalate and report on the same day.</li>
+<li>When a worker has been silent or unreachable for too long, escalate to the decision layer for help on the same day; never work around it only by reassigning.</li>
+</ul>
+<h3>6. Shelving and Reassignment: A State Change, Not a Note</h3>
+<ul>
+<li>At the moment of the order, complete all of these at the same time: release or transfer the original claim, open a tracked todo carrying a revisit date, and only then, if needed, add a note. Writing only a note counts as not handled.</li>
+<li>Within twenty-four hours after reassignment, recheck two things: whether the original worker filed a progress draft, and whether the new task was picked up; if either is missing, chase it and report it on the same day.</li>
+<li>Stuck flags raised by monitoring (for example, claimed for more than forty-eight hours with no result) are handled or reported on the same day; they never sit overnight inside a summary.</li>
+</ul>
+<h3>7. Common Mistakes Checklist</h3>
+<ul>
+<li>Pushing verification onto the requester: the deliverer self-reports completion and the requester verifies alone, which means neither side actually verified.</li>
+<li>Shelving with only a note: the claim stays frozen in place and is discovered days later in a summary.</li>
+<li>Backfilling the claim after starting: the cost is already spent, the claim record is written afterwards, and double spending can no longer be intercepted.</li>
+<li>Feeding by most-remaining: the soonest-expiring quota evaporates first, while the one with the most left gets used first instead.</li>
+<li>Dispatching a model for routine checks too: over time, threshold checks that could have been written down burn more quota than the real work.</li>
+</ul>
+<p>Data date: 2026-11-13. Source material: the division-of-work architecture and daily operations records of PlAIground Lab's multi-layer AI team (de-identified and organized); all role names are function names.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
