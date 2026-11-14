@@ -2,6 +2,10 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [預防措施不准變成用量大頭：零 LLM 看門狗設計（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-14-zero-llm-watchdog/)
+- [Prevention Must Not Become the Biggest Usage Line: Designing Zero-LLM Watchdogs (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-14-zero-llm-watchdog/)
+- [Agent edition, 中文：2026-11-14-zero-llm-watchdog](https://blog.plaigroundlab.com/posts/2026-11-14-zero-llm-watchdog.agent.md)
+- [Agent edition, English: 2026-11-14-zero-llm-watchdog](https://blog.plaigroundlab.com/posts/2026-11-14-zero-llm-watchdog.en.agent.md)
 - [一個 AI 團隊的分工：總督、參謀長與免費工人艦隊（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-13-ai-team-roles/)
 - [How an AI Team Divides the Work: The Governor, the Chief of Staff, and a Free Worker Fleet (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-13-ai-team-roles/)
 - [Agent edition, 中文：2026-11-13-ai-team-roles](https://blog.plaigroundlab.com/posts/2026-11-13-ai-team-roles.agent.md)
