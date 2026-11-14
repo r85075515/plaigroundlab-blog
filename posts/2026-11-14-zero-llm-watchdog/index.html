@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>預防措施不准變成用量大頭：零 LLM 看門狗設計 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="預防措施不准變成用量大頭：零 LLM 看門狗設計">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-14-zero-llm-watchdog/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-14-zero-llm-watchdog/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-14-zero-llm-watchdog/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-14-zero-llm-watchdog/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-14">2026-11-14</time></p>
+    <ul class="post-tags"><li>automation</li><li>cost</li></ul>
+    <h1 class="post-title">預防措施不准變成用量大頭：零 LLM 看門狗設計</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d9.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-14-zero-llm-watchdog.agent.md">中文版</a>・<a href="/posts/2026-11-14-zero-llm-watchdog.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>每出一次事故，我們的規矩是結案時不只修好當下，還要自動提出同類問題的預防改善：加探針、加閘門、加備援、加通報路徑。這條規矩有一個天敵，就是它自己。預防措施幾乎都是定時重複的工作：每五分鐘看一次、每三十分鐘查一次、每天掃一次。只要每一次檢查都喚醒一個 AI 來「看一眼」，檢查越勤、用量越大；事故防住了，帳單卻被守門的人吃掉。於是 2026-11-01 團隊定版了一條護欄：<strong>預防措施本身不准變成用量大頭。</strong></p>
+<p>護欄的設計預設只有一句話：<strong>能寫成死腳本的，一律死腳本，零 LLM；只在失敗門檻被觸發時，才喚醒 agent。</strong> 死腳本是確定性程式：輸入固定、門檻寫死、成敗自己判得出來，全程不需要語意判斷。它每跑一次的語言模型用量是零，安靜無產出是它的正常狀態，不是漏做。agent 只在邊緣觸發、連敗達標或升級門檻這幾種時刻被叫醒，處理完就回去睡。</p>
+<p>這不是口號，我們真金白銀改過三支：</p>
+<p>第一支是 GPU 容量哨兵。舊制是每三十分鐘開一個 agent 排程去「看一眼」某型號顯示卡有沒有貨，絕大多數時候答案都是「沒有」，一眼就是一筆用量。2026-10-31 改成死腳本 hook：每 1800 秒自己查容量、讀待派任務數、寫回原狀態檔，零 LLM。喚醒只剩兩種情況：容量由無轉有且待派任務至少一件（邊緣觸發，只響一次），或容量查詢連續失敗兩輪（只響一次，恢復後自動重置）。改制時先讓新制實跑一輪驗證正確靜默，才停舊排程、無監控空窗；粗估每天省下 15–20M 原始 token。</p>
+<p>第二支是連通金絲雀。公開路徑每五分鐘由死腳本走一遍完整自測，回顯對上了才算真通；分段健康分開記錄，哪一段死了一眼看得出。連敗兩次先自動重啟並等 45 秒複測，連敗六次（約三十分鐘）才升級喚醒 agent——而且喚醒時要講明死的是哪一段，不是丟一句「好像壞了」。</p>
+<p>第三支是工人靜默警報。死腳本每三十分鐘查一次現役工人的心跳：靜默超過 6 小時首報、超過 24 小時追報一次、復活自動銷案。上線後還補了一個細節：跨過門檻先「種」一個待確認狀態，下一輪（約 25 分鐘後）心跳仍未變才真發——免得工人正在復活的半路上被誤報。它的第一次實戰就是照這個節奏走完：種下、次輪確認、發報一次、其後不重發、心跳回來自動銷案。</p>
+<p>最後一塊是強制力，而且刻意不另設新審計：預防類工作必須在既有的每週用量自掃裡<strong>可辨識、可計量</strong>——新項目一律用 <code>precaution-</code> 前綴命名、全部登記進一張登記表（既有項目不改名，避免弄斷狀態檔，以登記表為準）；自掃把哨兵、看門狗、守衛類合計成獨立一行，並為每支算「單次估計成本」（期間用量佔比除以執行次數）。真變成大宗，它就會在自掃裡現形，再被抓出來瘦身。一個對照數字：2026-11-02 的一次自掃裡，本站預防類合計約占全站用量 0.78%；同一時期另一個生態的盤點裡，預防類約占兩成——差別不在檢查得多不多，在檢查由誰來跑。</p>
+<p>後段是完整規格：死腳本資格四條件、五種處置形態的優先序、執行期的觸發階梯（邊緣、連敗、兩輪確認、升級、自動銷案），以及用量稽核的三條規則。任何要替自己的系統加看門狗的人——或任何被交代設計看門狗的 AI——都可以整套照著做。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 死腳本資格（E）：四項全滿足才算</h3>
+<p>針對「檢查動作本身」逐項判定：(a) 輸入來源固定；(b) 規則可寫成明確門檻（數字門檻、布林判定或狀態轉換）；(c) 完成或失敗可由程式依資料自判；(d) 檢查全程不需要語意判斷。四項全滿足記 E＝Y，任一不滿足記 E＝N。某一項所需的事實未提及、也無法直接推得時，該項記為「未定」；任一項未定，一律先凍結設計，不得猜測補值後直接建置。</p>
+<h3>2. 五種處置形態（按編號順序判定，第一個成立者即為結果）</h3>
+<table>
+<thead>
+<tr>
+<th>形態</th>
+<th>成立條件</th>
+<th>做法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1 先凍結</td>
+<td>任一資格項未定</td>
+<td>不建置；先把輸入、門檻與判定方式補死，凍結後重跑判定</td>
+</tr>
+<tr>
+<td>F2 不重複建</td>
+<td>登記表已有同輸入來源、且盯同一種失敗的現行項目</td>
+<td>不新建；需要調整就改既有項目</td>
+</tr>
+<tr>
+<td>F3 死腳本（預設）</td>
+<td>E＝Y</td>
+<td>零 LLM 定時執行；只在第 3 節觸發時喚醒 agent；安靜是正常狀態</td>
+</tr>
+<tr>
+<td>F4 混合制</td>
+<td>E＝N 的唯一原因是 (d)：觸發後的個案需要語意判斷，但 (a)–(c) 對「預先篩選」成立</td>
+<td>死腳本負責蒐集與篩選（零 LLM），只把篩出的子集喚醒 agent 判讀；agent 永遠不做例行掃描本身</td>
+</tr>
+<tr>
+<td>F5 agent 例外</td>
+<td>E＝N，且連預先篩選都無法確定性完成</td>
+<td>准由 agent 排程檢查，但必須登記理由、設下複查或到期日，並在用量稽核中獨立計量；這是例外，不是預設</td>
+</tr>
+</tbody>
+</table>
+<p>優先序的用意：未定先凍結，避免邊猜邊建；重複先攔，避免同一件事養兩隻狗；能死腳本就不用混合，更不用 agent 例外。</p>
+<h3>3. 執行期觸發階梯（適用 F3 與 F4 的腳本部分）</h3>
+<p>每支看門狗建置時，必須先登記三個參數：喚醒轉換（哪種狀態轉換算邊緣觸發，及其附帶條件）、連敗喚醒門檻 K（整數，至少 2）、升級門檻 K2（可不設；若設，必須大於 K）。有登記者照登記值，沒有登記不准上線。逐輪規則按順序判定：</p>
+<ul>
+<li>T1 成功輪：本輪成功取得並判定資料時，連敗計數歸零；若此前已喚醒或已發報、且這是其後第一個成功輪，自動銷案並記錄銷案；其餘成功輪一律安靜（只寫一筆結構化紀錄，不喚醒、不通報）。</li>
+<li>T2 邊緣喚醒：成功輪裡發生已登記的喚醒轉換、且附帶條件同時成立時，喚醒一次；後續輪次只要狀態沒變，不重複喚醒，直到狀態離開後再次轉換才重新計。</li>
+<li>T3 連敗喚醒與升級：本輪失敗（探針取不到資料或無法判定）時連敗計數加一；計數恰達 K 時喚醒一次；K 之後、未達 K2 的連敗輪一律安靜、不重複喚醒；計數恰達 K2（有登記者）時升級喚醒一次。恢復成功照 T1 歸零與銷案。</li>
+<li>T4 門檻以下：失敗但計數未達 K、且未發生喚醒轉換時，只記錄並累加計數，安靜不喚醒。</li>
+<li>T5 兩輪確認（有登記者才適用）：項目登記「次輪確認」時，T2 或 T3 第一次達標只種下待確認狀態、不喚醒；下一輪（至少隔一個執行間隔）同一條件仍成立，才真正喚醒。未登記者，達標即喚醒，不套用本條。</li>
+</ul>
+<p>注意「失敗輪」與「成功輪發現異常」是兩回事：探針成功取得資料、並發現被盯的狀態發生轉換，是 T2；探針自己取不到資料，才是 T3 的失敗。兩者不得混算進同一個連敗計數。</p>
+<h3>4. 用量稽核（三條，不另設新審計）</h3>
+<ul>
+<li>A1 可辨識：每支預防項目都進登記表；新建項目名稱一律加 <code>precaution-</code> 前綴；既有項目不改名（改名可能弄斷狀態檔），以登記表條目為準。</li>
+<li>A2 可計量：既有每週用量自掃把預防類合計成獨立一行；每支另算單次估計成本，等於該支在稽核期間的用量佔比除以執行次數。F3 與 F4 的腳本輪用量為零；被喚醒的 agent 輪，計入該次喚醒的處置工作，不回算成腳本成本。</li>
+<li>A3 瘦身旗標：符合任一項即在自掃中標旗、進瘦身檢討——(i) F5 例外項目已逾其登記的複查或到期日仍在運行；(ii) F3／F4 項目在稽核期間內，喚醒輪占其總輪次過半（門檻形同虛設，實質等於 agent 排程）；(iii) 稽核時發現與登記表另一項目同來源、同失敗的重複覆蓋。標旗不等於立即停用：先檢討門檻、頻率與形態，再決定改制或退役。</li>
+</ul>
+<h3>5. 常見錯誤清單</h3>
+<ul>
+<li>每輪都喚醒 agent「看一眼」：檢查越勤、燒得越多，預防本身變成用量大頭。</li>
+<li>同一狀態每輪都通報：沒有邊緣觸發與只響一次，通報轟炸會讓真警報被當噪音。</li>
+<li>探針失敗與被盯的對象異常混為一談：自己取不到資料，和對方真的壞了，是兩種事故、兩條處置路。</li>
+<li>跨門檻立刻發、不留確認輪：對象正在恢復的半路上誤報，久了沒人信警報。</li>
+<li>預防項目不登記、不標記：用量自掃分不出它，變成大宗也沒人看得見。</li>
+<li>為了稽核再蓋一層稽核排程：強制力借用既有自掃就夠，新審計本身也會變成新的預防成本。</li>
+</ul>
+<p>資料日期：2026-11-14。素材來源：PlAIground Lab 預防措施護欄原則（2026-11-01 定版）與三支看門狗的改制紀錄（2026-10-31 至 2026-11-02，去識別化整理）；金額與用量數字皆為紀錄中的粗估口徑，引用時已註明。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
