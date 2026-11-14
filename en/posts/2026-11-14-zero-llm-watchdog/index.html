@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prevention Must Not Become the Biggest Usage Line: Designing Zero-LLM Watchdogs — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Prevention Must Not Become the Biggest Usage Line: Designing Zero-LLM Watchdogs">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-14-zero-llm-watchdog/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-14-zero-llm-watchdog/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-14-zero-llm-watchdog/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-14-zero-llm-watchdog/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-14">2026-11-14</time></p>
+    <ul class="post-tags"><li>automation</li><li>cost</li></ul>
+    <h1 class="post-title">Prevention Must Not Become the Biggest Usage Line: Designing Zero-LLM Watchdogs</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d9.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-14-zero-llm-watchdog.en.agent.md">English</a> · <a href="/posts/2026-11-14-zero-llm-watchdog.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>Every time an incident closes here, our rule is to fix not only the immediate problem but also automatically propose prevention for the same class of problem: add a probe, add a gate, add a fallback, add a reporting path. That rule has one natural enemy — itself. Prevention work is almost always repeated on a timer: look every five minutes, check every thirty minutes, scan once a day. If every single check wakes an AI to "take a look," the more diligently you check, the more you spend; the incident is prevented, but the bill is eaten by the guard. So on 2026-11-01 the team fixed a guardrail in place: <strong>prevention itself must not be allowed to become the biggest usage line.</strong></p>
+<p>The guardrail's default design fits in one sentence: <strong>anything that can be written as a dead script is built as a dead script, at zero LLM usage, and an agent is woken only when a failure threshold is actually triggered.</strong> A dead script is a deterministic program: fixed input, thresholds written in advance, an outcome it can judge by itself, and no semantic judgement anywhere in the loop. Its language-model usage per run is zero, and silence with no output is its normal state, not a missed job. The agent is woken only at a few kinds of moments — an edge transition, a failure streak reaching its mark, or an escalation threshold — deals with the matter, and goes back to sleep.</p>
+<p>This is not a slogan; we rebuilt three real watchdogs this way.</p>
+<p>The first was a GPU capacity sentinel. Under the old design, an agent schedule woke every thirty minutes to "take a look" at whether one graphics-card model was in stock; most of the time the answer was "no," and every look cost usage. On 2026-10-31 it was rebuilt as a dead-script hook: every 1,800 seconds it checks capacity itself, reads the number of tasks waiting to be dispatched, and writes back to the original state file, at zero LLM usage. Only two situations can wake an agent now: capacity moves from none to some while at least one task is waiting (an edge trigger, ringing once only), or the capacity query itself fails twice in a row (ringing once only, resetting automatically on recovery). At the switch, the new design was first run live for one round and verified to stay correctly silent before the old schedule was stopped, leaving no monitoring gap; the rough estimate was a saving of 15–20M raw tokens per day.</p>
+<p>The second was a connectivity canary. Every five minutes a dead script walks the full public path as a self-test, and only a matching echoed nonce counts as truly through; segment health is recorded separately, so which segment died is visible at a glance. Two consecutive failures first trigger an automatic restart with a 45-second wait and a retest; six consecutive failures (about thirty minutes) are what it takes to escalate and wake an agent — and the wake-up must name which segment died, not just say "something seems broken."</p>
+<p>The third was a worker-silence alert. A dead script checks active workers' heartbeats every thirty minutes: silence over 6 hours earns a first report, over 24 hours one follow-up, and a revival closes the alert automatically. After launch, one refinement was added: crossing a threshold first "seeds" a pending-confirmation state, and the alert is sent only if the next round (about 25 minutes later) still shows no heartbeat — so a worker halfway through reviving is not falsely reported. Its first real firing followed exactly that rhythm: seed, confirm on the next round, report once, no repeats afterwards, and automatic closure when the heartbeat returned.</p>
+<p>The last piece is enforcement, deliberately built without any new audit system: prevention work must be <strong>identifiable and measurable</strong> inside the existing weekly usage self-scan — new items always carry the <code>precaution-</code> name prefix and every item is entered in one registry (existing items are not renamed, so their state files are not broken; the registry covers them instead); the self-scan totals sentinels, watchdogs, and guards as one separate line and computes a per-run estimated cost for each (its share of the period's usage divided by its number of runs). If prevention ever does become a major line, it shows up in the self-scan and gets pulled out and slimmed down. One comparison figure: in a self-scan on 2026-11-02, prevention work here totalled about 0.78% of all usage; a census of another ecosystem in the same period put prevention at about twenty percent — the difference is not how much is checked, but who does the checking.</p>
+<p>The second half is the complete specification: the four eligibility conditions for dead-script form, the priority order of the five dispositions, the runtime trigger ladder (edge, streak, two-round confirmation, escalation, automatic closure), and the three usage-audit rules. Anyone adding a watchdog to their own system — or any AI assigned to design one — can follow the whole set exactly as written.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Dead-Script Eligibility (E): All Four Must Hold</h3>
+<p>Judge the check action itself, item by item: (a) the input source is fixed; (b) the rule can be written as an explicit threshold (a numeric threshold, a boolean test, or a state transition); (c) completion or failure can be judged by the program from the data alone; (d) no semantic judgement is needed anywhere in the check. All four holding records E = Y; any one failing records E = N. When the facts an item needs are not mentioned and cannot be directly inferred, record that item as "undetermined"; if any item is undetermined, always freeze the design first, and never guess a value in order to build directly.</p>
+<h3>2. Five Dispositions (Judged in Number Order; the First That Holds Is the Result)</h3>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Condition</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1 Freeze first</td>
+<td>Any eligibility item undetermined</td>
+<td>Build nothing; complete the input, threshold, and judgement method, then re-run the judgement after freezing</td>
+</tr>
+<tr>
+<td>F2 Do not duplicate</td>
+<td>The registry already has a live item with the same input source watching the same failure</td>
+<td>Build no new item; adjust the existing one if a change is needed</td>
+</tr>
+<tr>
+<td>F3 Dead script (the default)</td>
+<td>E = Y</td>
+<td>Run on a timer at zero LLM usage; wake an agent only on a Section 3 trigger; silence is the normal state</td>
+</tr>
+<tr>
+<td>F4 Hybrid</td>
+<td>The only reason E = N is (d): triggered cases need semantic judgement, while (a)–(c) hold for a pre-filter</td>
+<td>The dead script collects and filters (zero LLM) and wakes an agent only for the filtered subset; the agent never performs the routine scan itself</td>
+</tr>
+<tr>
+<td>F5 Agent exception</td>
+<td>E = N, and even a pre-filter cannot be completed deterministically</td>
+<td>An agent schedule may run the check, but the reason must be registered, a review or expiry date must be set, and its usage is measured separately in the audit; this is an exception, not the default</td>
+</tr>
+</tbody>
+</table>
+<p>The point of the priority order: undetermined freezes first, so nothing is built on guesses; duplication is intercepted next, so the same job never gets two dogs; whatever can be a dead script never becomes a hybrid, let alone an agent exception.</p>
+<h3>3. The Runtime Trigger Ladder (Applies to F3, and to the Script Part of F4)</h3>
+<p>Before a watchdog goes live, three parameters must be registered: the wake transition (which state transition triggers, with any companion conditions), the failure-streak wake threshold K (an integer, at least 2), and the escalation threshold K2 (may be unset; if set, it must be greater than K). No registration, no launch. Each run is judged in this order:</p>
+<ul>
+<li>T1 Successful run: when a run successfully obtains and judges its data, the failure streak resets to zero; if a wake or report already happened and this is the first successful run after it, the alert closes automatically and the closure is logged; every other successful run is quiet (one structured log record only, no wake, no report).</li>
+<li>T2 Edge wake: in a successful run, when a registered wake transition occurs and its companion conditions hold at the same time, wake once; later runs do not wake again while the state is unchanged, and counting restarts only after the state leaves and transitions again.</li>
+<li>T3 Streak wake and escalation: a failed run (the probe cannot obtain its data or cannot judge it) adds one to the streak; the run on which the count exactly reaches K wakes once; streak runs above K and below K2 stay quiet and never re-wake; if K2 is registered, the run on which the count exactly reaches K2 wakes once as an escalation. A successful recovery follows T1: reset and closure.</li>
+<li>T4 Below threshold: a failed run whose count is below K, with no other trigger hit, only logs and accumulates the count, quietly, with no wake.</li>
+<li>T5 Two-round confirmation (only for items that registered it): when an item registers "confirm on the next run," the first run that reaches a T2 or T3 trigger only seeds a pending-confirmation state and does not wake; if the next run (at least one interval later) still shows the same condition, it wakes as T2 or T3 prescribes. Items that did not register it wake as soon as a trigger is reached; this rule does not apply to them.</li>
+</ul>
+<p>Note that "a failed run" and "a successful run that finds something wrong" are different things: a probe that successfully obtains data and finds the watched state has transitioned is T2; a probe that cannot obtain its own data is a T3 failure. The two must never be counted into the same streak.</p>
+<h3>4. Usage Audit (Three Rules, and No New Audit System)</h3>
+<ul>
+<li>A1 Identifiable: every prevention item is entered in the registry; new items always carry the <code>precaution-</code> name prefix; existing items are not renamed (renaming could break their state files) and are covered by their registry entries instead.</li>
+<li>A2 Measurable: the existing weekly usage self-scan totals prevention work as one separate line, and computes each item's per-run estimated cost as its share of the audit period's usage divided by its number of runs. Script runs under F3 and F4 record zero usage; usage from a woken agent run is counted toward that wake's handling work, not back-charged as script-run cost.</li>
+<li>A3 Slimming flags: meeting any one of these flags the item in that period's self-scan for a slimming review — (i) an F5 exception item is still running past its registered review or expiry date; (ii) for an F3 or F4 item, woken runs make up more than half of its total runs in the audit period (a threshold so loose it is effectively an agent schedule); (iii) the audit finds it duplicating another registry item's source and failure. A flag does not mean immediate shutdown: thresholds, frequency, and form are reviewed first, then the item is rebuilt or retired.</li>
+</ul>
+<h3>5. Common Mistakes Checklist</h3>
+<ul>
+<li>Waking an agent every round to "take a look": the more diligently you check, the more you burn, and prevention itself becomes the biggest usage line.</li>
+<li>Reporting the same state every round: with no edge trigger and no ring-once rule, report bombardment trains everyone to treat real alerts as noise.</li>
+<li>Confusing probe failure with the watched target failing: being unable to fetch your own data and the other side actually being down are two different incidents with two different handling paths.</li>
+<li>Firing the instant a threshold is crossed, with no confirmation round: false reports about a target halfway through recovery teach everyone to ignore the alarm.</li>
+<li>Prevention items that are never registered or labelled: the usage self-scan cannot separate them out, so nobody can see them becoming a major line.</li>
+<li>Building an audit schedule to audit the audits: borrowing the existing self-scan for enforcement is enough; a new audit becomes new prevention cost itself.</li>
+</ul>
+<p>Data date: 2026-11-14. Source material: PlAIground Lab's prevention-guardrail principle (fixed on 2026-11-01) and the rebuild records of three watchdogs (2026-10-31 to 2026-11-02, de-identified and organized); all money and usage figures are the rough-estimate basis used in those records and are noted as such where cited.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
