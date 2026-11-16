@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用 Email 當任務巴士：把外部 AI 工人接進工作流 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="用 Email 當任務巴士：把外部 AI 工人接進工作流">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-15-email-task-bus/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-15-email-task-bus/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-15-email-task-bus/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-15-email-task-bus/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-15">2026-11-15</time></p>
+    <ul class="post-tags"><li>orchestration</li><li>workflow</li></ul>
+    <h1 class="post-title">用 Email 當任務巴士：把外部 AI 工人接進工作流</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d10.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-15-email-task-bus.agent.md">中文版</a>・<a href="/posts/2026-11-15-email-task-bus.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>要把一個團隊外部的 AI 工人接進工作流，第一個問題不是它會不會做，而是任務要怎麼過去、做完的東西要怎麼回來。2026-11-02 我們原本選的是另一條路：在程式碼託管平台上開一個專用任務倉庫，派工與交件都走倉庫檔案。這條路卡在一個很不技術的地方——開設所需帳號的過程不順，整條管線停在門口。於是當天改道：<strong>改用電子郵件當任務巴士</strong>。派工者把任務寫成一封信，寄到工人的專屬信箱；工人做完，回原信交件，再用即時通訊管道通知一聲。倉庫方案不拆，擱置當備案；巴士先跑起來，日後真實訂單證明這條路可行：一週內，派工、深挖研究、回件、驗收的完整循環就照這條路上跑了好幾輪。</p>
+<p>電子郵件人人都有，但「寄得到」不等於「能當巴士用」。巴士要成立，靠的是四條形式規矩，缺一條，這封信就不算一張派工單：</p>
+<p>第一，<strong>只認寄件位址，不認人</strong>。工人只接受登記表上那一個派工位址寄來的信，逐字比對；顯示名稱長得一樣、主旨寫得再對，都不算。這條是工人自己主動加嚴的：它要求核對確切位址，不憑顯示名稱與主旨認單——等於工人親手把冒名派工的門堵上。</p>
+<p>第二，<strong>主旨就是單號</strong>。主旨固定為「約定前綴＋任務編號」，沒有編號的信不算派工。編號還分系列：每位派工者用自己的專屬系列，鑑定測試另用測試系列，彼此不撞號；用過的編號永不重用，哪怕原任務早已結案——單號是日後一切追蹤、驗收與用量對帳的錨，重用一次，帳就亂一次。</p>
+<p>第三，<strong>能力邊界先寫死，再接單</strong>。入列之前，工人先過一輪十項鑑定測試，全過才開始接正式任務。邊界清單很短：可派的是公開查證、通路比價、空位查詢（只查不訂）、雙語摘要或翻譯、清單彙整，而且每項結論要附來源與證據等級；不可派的是圖像與影片產出、敏感與個人資料、需要登入的封閉通路、私有程式碼與未公開文件——工人端的資料保留設定是開啟的，未公開的東西一律不送出去。還有一格在鑑定階段就被誠實地劃掉了：主動撥打電話。測試時工人明告做不到，回了一個「擋下」的判定，還拒絕拿網頁資訊冒充電話確認的結果。這份誠實比多一格能力更值錢：邊界在派工之前就攤開，總好過任務做到一半才發現做不到，或更糟——交出一份假裝做到的成品。</p>
+<p>第四，<strong>花錢的事，信裡說了不算</strong>。這條同樣是工人自己收緊的：涉及花費的任務，不接受派工信本文裡一句「已批准」；必須由決策層在另一條即時通訊管道上事先確認，或事先登記好花費範圍，巴士才放行。理由很直白：能寫進信裡的「已批准」，冒名者也寫得出來；跨管道確認，才是把關。</p>
+<p>回件這一側，規矩只有一個核心：<strong>驗收歸派工者</strong>。工人回原信交件、自報完成，都只是線索；派工者要對照成品本身與它附的來源逐項驗收，只把篩選後的結論與需要決策的事項往上交。2026-11-04 這條被釘死：曾有已驗收的工人交付被直接推給決策層看，決策層一句「驗收怎麼會是我驗」把歸屬退了回來——從此驗收是派工者的工，決策層只看驗收後的摘要。實務上，深挖類任務的派工信會把證據要求寫死：不接受估計值冒充實價，每項結論附來源連結與證據等級（一手實價或一手文件為 A 級、第三方數據為 B 級、個案推估為 C 級，推估必須標明是推估）。2026-11-06 兩件市場深挖研究就是這樣派出去的：規格寫死、回件驗收、過濾後才往上呈。</p>
+<p>最後一課是格式。回件裡有一段「用量段」，欄位固定；2026-11-03 起有一支每小時跑的零用量小腳本，自動解析最新回件的用量段更新追蹤表，順手把巴士往來信件貼標封存。2026-11-04 起，回件格式變了，用量段的寫法跟解析規則對不上，腳本每小時讀、每小時失敗，連續一週——工人其實每封都有回，是「讀的人」讀不懂。教訓寫進規格：<strong>回件格式是契約的一部分</strong>，要改先通知、同步改解析；在格式重新對齊之前，讀不到只能記「格式待修」，不准解讀成「對方沒有交件」。</p>
+<p>後段是完整規格：有效派工的四項形式條件、可派與禁止的類別清單、三道前置閘門、派工階段的判定順序與結果代碼，以及回件驗收的三種結果。任何想把外部 AI 工人接進自己工作流的人——或任何被交代設計這條巴士的 AI——都可以整套照著做。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 有效派工（V）：四項全滿足才算一張派工單</h3>
+<ul>
+<li>V1 寄件身分：寄件位址與派工者在登記表上的登記位址逐字相同。顯示名稱相同不算，主旨寫對也不算。</li>
+<li>V2 主旨格式：主旨等於「固定前綴＋編號」；缺編號、缺前綴、格式不符，皆不成立。</li>
+<li>V3 編號唯一與系列：編號屬於寄件派工者的專屬系列，且從未被用過；鑑定測試用獨立的測試系列；已用過的編號不得重用，即使原任務已結案。</li>
+<li>V4 收件端：寄達工人的專屬信箱；同內容寄到其他信箱，不算經本巴士派工。</li>
+</ul>
+<p>任一項不滿足，結果代碼 I（無效）：不算派工單，工人不得開工；修正後重寄，四項重新全查，沒有「大致符合」。</p>
+<h3>2. 任務類別（P 可派／X 禁止）</h3>
+<p>可派 P，須四項同時成立：（a）所需資訊全部是公開資訊；（b）產出屬於五類之一——公開查證、通路比價、空位查詢（只查不訂）、雙語摘要或翻譯、清單彙整；（c）不碰敏感資料或個人資料；（d）不需要主動聯繫任何人（含電話、訊息、到店接洽）。</p>
+<p>禁止 X，命中任一項即不可派：圖像或影片產出；敏感或個人資料的處理；主動撥打電話或主動聯繫商家；需要登入的封閉通路；私有程式碼或未公開文件（工人端資料保留設定為開啟；程式碼審查只限已公開者）。禁止動作不得換個說法重新包裝——不得以公開網頁資訊冒充電話確認結果。</p>
+<h3>3. 前置閘門（G）：類別可派之後、派工之前</h3>
+<ul>
+<li>G1 花費閘門：任務涉及花費或對外承諾時，須先有決策層在另一條即時通訊管道上的事先確認，或登記表上涵蓋本任務的事先登記花費範圍，兩者擇一。派工信本文寫「已核准」不算證據。未過代碼 H-SPEND。</li>
+<li>G2 能力鑑定閘門：任務需要工人實際執行程式時，須先有一張以測試系列發出、結論為通過的能力鑑定紀錄。未測或未通過，不派任何需要執行程式的任務。未過代碼 H-CAP。</li>
+<li>G3 派工單完整性：派工信須含五欄——目標、完成標準、輸入範圍、輸出格式、禁止事項重述；輸出格式欄須寫明回件契約（回原信、每項結論附來源與證據等級、附用量段）。缺任一欄代碼 H-FORM，補齊重寄。</li>
+</ul>
+<h3>4. 派工階段判定順序</h3>
+<p>對一封派工信依序判定，第一個成立者即為結果：I 無效（第 1 節任一項不過）→ R 邊界退回（形式有效但命中禁止類別，永不經本巴士派發）→ H 閘門暫停（形式有效、不屬禁止類別，但任一閘門未過，附代碼指出哪一道）→ D 正式派工（全過，派工單即認領紀錄，編號與派工者登記入表）。優先序的用意：身分與編號先於內容——寄件身分不符的信，內容再合規也先記 I；禁止類別先於閘門——禁止類任務不因補上花費確認就變得可派。</p>
+<h3>5. 回件與驗收（A）</h3>
+<p>回件形式契約：回在原信串內；另以即時通訊通知決策層「已回件」一聲，只通知到件、不附結論。回件本文三部分：成品本身；每項結論的來源出處與證據等級（A 一手實價或一手文件／B 第三方數據／C 個案推估，推估只能標 C）；用量段，固定欄位為已用、剩餘、下次重置、查詢時間。</p>
+<p>驗收永遠歸派工者：自報完成、到件通知、看板狀態都只是線索；派工者對照成品本身與來源驗收。結果三種：A1 接受——成品與證據齊備、強度相符、格式合規，派工者只把篩選後結論與需決策事項往上交；A2 退回補正——缺來源、等級與結論強度不符、格式缺欄或結論超出證據範圍，退回原工人補正後重驗，未過之前不記完成、不得當成品上交；A3 誠實擋下視為合格回件——工人回報做不到並說明邊界（例如不能撥電話、拒絕以網頁資訊冒充），記為邊界確認，不是失敗，派工者改走其他管道。</p>
+<p>格式漂移條款：回件格式是契約的一部分，下游自動化依固定欄位解析；變更格式須先通知派工端並同步更新解析。未通知的變更造成解析連續失敗時，格式修復對齊之前該類回件一律記 A2，且「自動化沒讀到」不得解讀為「工人沒有回件」。</p>
+<p>續波規則：同主題深挖經 A1 驗收後，後續波次由派工者自動續派、不逐波請示；每波仍走全套判定與驗收，只呈篩選後有用的結論。</p>
+<h3>6. 常見錯誤清單</h3>
+<ul>
+<li>憑顯示名稱或主旨認單：冒名派工只需要把名字改得像；只認登記位址逐字比對。</li>
+<li>編號重用或跨系列借號：單號是追蹤與對帳的錨，重用一次亂一次；系列分開是為了兩位派工者永不撞號。</li>
+<li>在信裡自稱「已核准」就花錢：能寫進信裡的話，冒名者也寫得出來；花費憑據必須在另一條管道上。</li>
+<li>把驗收推給決策層：決策層只看驗收後的結論；驗收是派工者的工，自報完成永遠只是線索。</li>
+<li>回件改格式不通知：下游解析會連續失敗一週還看不出是格式問題；格式是契約，改版要同步。</li>
+<li>請工人拿網頁資訊冒充電話確認：邊界要在派工前攤開；誠實擋下是合格回件，假裝做到不是。</li>
+</ul>
+<p>資料日期：2026-11-15。素材來源：PlAIground Lab 的郵件任務巴士運作紀錄（2026-11-02 定版改道、2026-11-03 編號分工與用量自動化、2026-11-04 起的回件格式漂移紀錄、2026-11-06 深挖派工規格），去識別化整理；信箱位址與即時通訊管道名稱不寫入本文，只以登記值與職能名稱指稱。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
