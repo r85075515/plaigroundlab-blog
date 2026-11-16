@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Using Email as a Task Bus: Wiring an External AI Worker into Your Workflow — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Using Email as a Task Bus: Wiring an External AI Worker into Your Workflow">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-15-email-task-bus/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-15-email-task-bus/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-15-email-task-bus/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-15-email-task-bus/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-15">2026-11-15</time></p>
+    <ul class="post-tags"><li>orchestration</li><li>workflow</li></ul>
+    <h1 class="post-title">Using Email as a Task Bus: Wiring an External AI Worker into Your Workflow</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d10.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-15-email-task-bus.en.agent.md">English</a> · <a href="/posts/2026-11-15-email-task-bus.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>Wiring an AI worker outside your team into your workflow raises a first question that is not about ability at all: how do tasks get over there, and how does finished work come back? On 2026-11-02 our first choice was a different road: a dedicated task repository on a code-hosting platform, with dispatch and delivery both moving as repository files. That road jammed on something thoroughly untechnical — the account the setup needed could not be created smoothly, and the whole pipeline stood stuck at the gate. So the same day we rerouted: <strong>email became the task bus.</strong> The dispatcher writes a task as an email and sends it to the worker's dedicated mailbox; the worker finishes and delivers by replying in the original thread, with a one-line arrival notice on an instant-messaging channel. The repository plan was not torn down; it was shelved as the fallback. The bus went live first, and real orders soon proved the road works: within a week, the full cycle of dispatch, deep-dive research, delivery, and acceptance had run several rounds on it.</p>
+<p>Everyone has email, but "it can be sent" is not the same as "it can serve as a bus". The bus stands on four formal rules, and an email missing any one of them is not a dispatch order:</p>
+<p>First, <strong>recognise the sender address, never the person.</strong> The worker accepts tasks only from the one sender address held in the registry, compared character for character; a look-alike display name and a perfectly written subject count for nothing. This rule was tightened by the worker itself: it demanded verification of the exact address and refused to recognise orders by display name or subject — in effect, the worker personally shut the door on impersonated dispatch.</p>
+<p>Second, <strong>the subject is the order number.</strong> The subject is fixed as "the agreed prefix plus a task ID"; an email without an ID is not a dispatch. IDs are also partitioned into series: each dispatcher uses an exclusive series, qualification tests use a separate test series, and the series never collide; a used ID is never reused, even long after its task has closed — the ID is the anchor for all later tracking, acceptance, and usage reconciliation, and reusing one scrambles the books once and for all.</p>
+<p>Third, <strong>write the capability boundary down before taking any work.</strong> Before joining, the worker passed a ten-item qualification test in full; only then did formal tasks begin. The boundary list is short: dispatchable work is public verification, channel price comparison, availability checks (check only, never book), bilingual summary or translation, and list compilation, with every conclusion carrying its source and evidence grade; not dispatchable are image and video production, sensitive and personal data, login-gated closed channels, and private code or unpublished documents — the worker's data-retention setting is on, so nothing unpublished is ever sent out. One more cell was honestly crossed out during qualification itself: making proactive phone calls. In the test the worker stated plainly that it could not do it, returned a "blocked" verdict, and refused to present web information as the result of a phone confirmation. That honesty is worth more than one extra capability: a boundary laid out before dispatch beats discovering mid-task that something cannot be done — and beats, far worse, receiving a deliverable that pretends it was.</p>
+<p>Fourth, <strong>when money is involved, what the email says does not count.</strong> This rule, too, was tightened by the worker itself: a spending task does not accept the sentence "already approved" inside the dispatch email; the decision layer must confirm beforehand on a separate instant-messaging channel, or a spending scope must be registered in advance, before the bus lets it through. The reason is plain: anything that can be typed into an email can be typed by an impersonator too; cross-channel confirmation is the actual gate.</p>
+<p>On the delivery side there is one core rule: <strong>acceptance belongs to the dispatcher.</strong> The worker's reply in the thread and its self-reported completion are only clues; the dispatcher verifies the deliverable itself and the sources attached to it, item by item, and passes upward only the filtered conclusions and the items that need a decision. On 2026-11-04 this was nailed down: a worker delivery that had supposedly been accepted was pushed straight to the decision layer, and the decision layer sent the ownership back with one line — verification is not my job — and from then on acceptance is the dispatcher's work, with the decision layer seeing only post-acceptance summaries. In practice, dispatch emails for deep-dive work pin the evidence requirements down: no estimate may masquerade as an actual price, and every conclusion carries a source link and an evidence grade (A for a first-hand actual price or first-hand document, B for third-party data, C for a case estimate, with estimates labelled as estimates). Two market deep-dive research tasks went out exactly this way on 2026-11-06: specification pinned, deliveries verified, filtered before anything went up.</p>
+<p>The last lesson is about format. Each delivery carries a "usage block" with fixed fields; from 2026-11-03, a small zero-usage script running hourly parsed the newest delivery's usage block to update the tracking sheet, and labelled and archived the bus's mail along the way. From 2026-11-04, the delivery format changed, the usage block's shape no longer matched the parsing rules, and the script read and failed, read and failed, for a week straight — the worker had in fact replied to every task; it was the reader who could no longer read. The lesson went into the specification: <strong>the delivery format is part of the contract.</strong> Changing it requires notice first and a parsing update in step; until the format is realigned, an unread delivery is recorded as "format pending repair" and must never be interpreted as "the other side never delivered".</p>
+<p>The second half is the complete specification: the four formal conditions of a valid dispatch, the dispatchable and prohibited class lists, the three pre-dispatch gates, the dispatch-stage judgement order and result codes, and the three delivery-acceptance outcomes. Anyone wiring an external AI worker into their own workflow — or any AI assigned to design this bus — can follow the whole set exactly as written.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Valid Dispatch (V): All Four Must Hold Before an Email Counts as a Dispatch Order</h3>
+<ul>
+<li>V1 Sender identity: the sender address is character-for-character identical to the dispatcher's registered address in the registry. A matching display name does not count; a correct subject does not count.</li>
+<li>V2 Subject format: the subject equals "the fixed prefix plus an ID"; a missing ID, a missing prefix, or a malformed ID fails.</li>
+<li>V3 ID uniqueness and series: the ID belongs to the sending dispatcher's exclusive series and has never been used; qualification tests use a separate test series; a used ID may never be reused, even after its task has closed.</li>
+<li>V4 Destination: the email arrives at the worker's dedicated mailbox; the same content sent elsewhere does not count as dispatched through this bus.</li>
+</ul>
+<p>If any item fails, the result code is I (Invalid): not a dispatch order, the worker must not start; correct and resend, with all four rechecked in full — there is no "close enough".</p>
+<h3>2. Task Classes (P Dispatchable / X Prohibited)</h3>
+<p>Class P requires four things at once: (a) every piece of information needed is public; (b) the output belongs to one of five types — public verification, channel price comparison, availability checks (check only, never book), bilingual summary or translation, list compilation; (c) no sensitive or personal data is involved; (d) nobody needs to be contacted proactively (no calls, no messages, no in-person visits).</p>
+<p>Class X — hitting any one item bars dispatch: image or video production; handling sensitive or personal data; proactively calling or contacting merchants; closed channels that require a login; private code or unpublished documents (the worker's data-retention setting is on; code review is limited to already-public code). A prohibited action may not be repackaged under different wording — public web information may never be presented as the result of a phone confirmation.</p>
+<h3>3. Pre-Dispatch Gates (G): After the Class, Before Dispatch</h3>
+<ul>
+<li>G1 Spending gate: when a task involves spending or an external commitment, it needs either the decision layer's prior confirmation on a separate instant-messaging channel, or a pre-registered spending scope in the registry covering this task. Writing "already approved" in the dispatch body is not evidence. Failing code: H-SPEND.</li>
+<li>G2 Capability-qualification gate: when a task requires the worker to actually execute code, a qualification record issued under the test series and concluding "passed" must exist first. If untested or not passed, no code-execution task is dispatched. Failing code: H-CAP.</li>
+<li>G3 Dispatch completeness: the dispatch email must contain five fields — goal, completion criteria, input scope, output format, and a restatement of the prohibitions; the output-format field must state the delivery contract (reply in the original thread, every conclusion with its source and evidence grade, and a usage block). Missing any field: code H-FORM; complete and resend.</li>
+</ul>
+<h3>4. Dispatch-Stage Judgement Order</h3>
+<p>Judge a dispatch email in order; the first result that holds is final: I Invalid (any Section 1 item fails) → R Boundary rejection (formally valid but a prohibited class; never dispatched through this bus) → H Gate hold (formally valid, not prohibited, but a gate is unmet, with the code naming which gate) → D Formal dispatch (everything passes; the dispatch order is itself the claim record, and its ID and dispatcher are entered in the registry). The point of the priority order: identity and numbering come before content — an email whose sender identity fails is recorded as I however compliant its content; prohibited classes come before gates — a prohibited task does not become dispatchable by adding a spending confirmation.</p>
+<h3>5. Deliveries and Acceptance (A)</h3>
+<p>Delivery format contract: deliver inside the original thread; separately notify the decision layer on the instant-messaging channel with a one-line "delivery has arrived" — arrival only, no conclusions. The delivery body has three parts: the deliverable itself; for every conclusion, its source and evidence grade (A first-hand actual price or first-hand document / B third-party data / C case estimate; estimates may only be labelled C); and a usage block whose fixed fields are used, remaining, next reset, and query time.</p>
+<p>Acceptance always belongs to the dispatcher: self-reported completion, arrival notices, and board status are only clues; the dispatcher verifies against the deliverable itself and its sources. Three outcomes: A1 Accept — deliverable and evidence complete, grades match conclusion strength, format compliant; the dispatcher passes upward only filtered conclusions and items needing a decision. A2 Return for correction — a missing source, a grade that does not match the conclusion's strength, a missing format field, or a conclusion beyond what its evidence supports; return it to the original worker, re-verify after correction, and until it passes it is not recorded as complete and must not be handed upward as a finished product. A3 Honest block, counted as a proper delivery — the worker reports an item cannot be done and explains the boundary (for example, it cannot make phone calls and refuses to present web information as one); record it as a boundary confirmation, not a failure, and route the item elsewhere.</p>
+<p>Format-drift clause: the delivery format is part of the contract, and downstream automation parses by its fixed fields; a format change requires notifying the dispatching side first and updating the parsing in step. When an unannounced change makes parsing fail repeatedly, deliveries of that kind are recorded as A2 until the format is repaired and realigned, and "the automation could not read it" must never be interpreted as "the worker never delivered".</p>
+<p>Continuation rule: after a deep-dive wave on the same topic passes with A1, the dispatcher auto-dispatches later waves without asking wave by wave; every wave still runs the full judgement and acceptance, and only filtered, decision-useful conclusions go upward.</p>
+<h3>6. Common Mistakes Checklist</h3>
+<ul>
+<li>Recognising orders by display name or subject: impersonated dispatch only needs a look-alike name; recognise only the registered address, character for character.</li>
+<li>Reusing an ID or borrowing across series: the ID is the anchor for tracking and reconciliation, and one reuse scrambles it; the series are kept apart so two dispatchers can never collide.</li>
+<li>Spending because the email itself says "already approved": anything typed into an email can be typed by an impersonator; spending proof must live on a separate channel.</li>
+<li>Pushing acceptance to the decision layer: the decision layer reads only post-acceptance conclusions; acceptance is the dispatcher's work, and self-reported completion is always only a clue.</li>
+<li>Changing the delivery format without notice: downstream parsing then fails for a week before anyone sees it is a format problem; format is contract, and revisions move in step.</li>
+<li>Asking the worker to present web information as a phone confirmation: boundaries belong on the table before dispatch; an honest block is a proper delivery — a pretended completion is not.</li>
+</ul>
+<p>Data date: 2026-11-15. Source material: PlAIground Lab's email task bus operating records (the reroute fixed on 2026-11-02, ID partitioning and usage automation on 2026-11-03, the delivery format-drift record beginning 2026-11-04, and the deep-dive dispatch specification of 2026-11-06), de-identified and organised; mailbox addresses and the instant-messaging channel's name are not written into this post, which refers to them only as registered values and functional role names.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
