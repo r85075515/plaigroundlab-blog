@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verify Before You Boot: Cloud GPU Operations Discipline — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Verify Before You Boot: Cloud GPU Operations Discipline">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-16-gpu-preflight-ops/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-16-gpu-preflight-ops/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-16-gpu-preflight-ops/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-16-gpu-preflight-ops/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-16">2026-11-16</time></p>
+    <ul class="post-tags"><li>gpu</li><li>operations</li></ul>
+    <h1 class="post-title">Verify Before You Boot: Cloud GPU Operations Discipline</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d11.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-16-gpu-preflight-ops.en.agent.md">English</a> · <a href="/posts/2026-11-16-gpu-preflight-ops.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>A cloud GPU is a machine that burns money by the hour. Booting the wrong one, leaving one running idle, or booting one whose GPU cannot actually be used all convert money directly into waiting. This discipline was bought one rule at a time, through repeated boots, stalls, and reboots, and its core fits in one sentence: <strong>verify the goods before you hand over any task; confirm the output before you shut down — and shut down means terminate, not stop.</strong></p>
+<p>Lesson one is the image and the startup command. An official image ships its own startup script, which brings up remote login and initialisation. Put one seemingly harmless "sleep and do not exit" line in the startup-arguments field and it overwrites the image's own startup script entirely: the machine looks alive and nothing has initialised. The rule is simple: <strong>use the official image and leave the startup arguments empty.</strong> If the machine must stay up, rely on the fact that it is long-running by nature, not on a command you injected.</p>
+<p>Lesson two is where the Python environment lives. A network disk is convenient, and models and data belong on it; but build a Python virtual environment on that same network disk and a program stalls at the very step of loading its libraries — the tell is that even the lowest-level system tools stall, which means the problem is not Python at all, it is "something is reading files off the network disk". The rule: <strong>use the system Python, install packages onto the container's local disk, and let the network disk hold only models, datasets, and outputs.</strong></p>
+<p>Lesson three is capacity. When the datacenter your disk is bound to has no stock, dry-waiting is the most expensive option: check capacity first, and if there is none, boot a machine with no disk attached instead, pull the models again from public sources, upload the results, and delete the machine at once. Waiting for a machine that is not coming is never cheaper than pulling a model one more time.</p>
+<p>Lesson four is the three boot checks. A machine showing "running" does not mean its GPU is usable: the device list must show the card, the compute library must report the GPU as available, and disk space must read normally — all three must pass before any task is handed over. We have seen a package installer pull a compute version newer than the host driver, making the GPU-available check return false outright; the second of the three checks exists for exactly that case, and failing fast is far cheaper than a task dying halfway.</p>
+<p>Lesson five is closing. After the work is done and the output is confirmed saved, <strong>terminate — do not stop</strong>: a stopped machine still bills for disk and storage. After terminating, list the machines once more and confirm with your own eyes that it is gone, and record this machine's cost in the version log. Idle is the same: past fifteen minutes idle, close it — a running unused machine is renting air.</p>
+<p>Last is failure discipline: the same error, retried twice and still failing, means stop, send the log back, and do not keep swapping images to try your luck. Swapping an image is the most expensive dice roll there is; every swap repays a full round of environment time.</p>
+<p>The second half is the complete specification: pre-boot checks, the three boot checks, environment and long-task discipline, the no-capacity fallback rule, the closing rules, the failure cap, and the stage-based result codes. Anyone operating a cloud GPU — or any AI assigned to boot one — can follow the whole set exactly as written.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Before Booting (P)</h3>
+<ul>
+<li>P1 Image: the official PyTorch image (CUDA 12.x series); startup arguments / Docker arguments left empty, with no command injected.</li>
+<li>P2 Naming and single machine: machines booted by our side always use the agreed prefix; at most one GPU machine runs at a time.</li>
+<li>P3 Capacity first: check capacity for the target GPU in the disk-bound datacenter before booting; booting without checking counts as unverified goods.</li>
+</ul>
+<h3>2. The Three Boot Checks (V, After Running; All Three Must Pass Before Any Task)</h3>
+<ul>
+<li>V1 The device-list command lists the target GPU.</li>
+<li>V2 Compute check: the in-Python GPU-available check returns true.</li>
+<li>V3 Disk check: the space listing is normal and the target disk is readable.
+If any item fails: hand over no task and diagnose first; in diagnosis, suspect the environment's read path first (environment files on the network disk), then version-versus-driver alignment.</li>
+</ul>
+<h3>3. Environment Discipline (E)</h3>
+<ul>
+<li>E1 Use the system Python and install packages onto the container's local disk; never build a virtual environment on the network disk.</li>
+<li>E2 The network disk holds only models, datasets, and outputs; a model needing fast reads may be copied locally first.</li>
+</ul>
+<h3>4. Long-Task Discipline (L)</h3>
+<ul>
+<li>L1 Run long tasks as background residents (nohup- or tmux-style), with logs written to files and polled by tail, so a dropped connection cannot kill the task.</li>
+<li>L2 Save a checkpoint every 250 steps, with its hash stored to disk or the repository, so an interruption can resume.</li>
+</ul>
+<h3>5. Capacity Fallback (F)</h3>
+<p>When the disk-bound datacenter shows no capacity, do not dry-wait: boot a machine with no disk attached, pull models and data again from public sources (model hub / code repository), and after the output is uploaded and confirmed, delete the machine.</p>
+<h3>6. Closing (T)</h3>
+<ul>
+<li>T1 Output confirmed saved before any shutdown is allowed.</li>
+<li>T2 Terminate, do not stop; a stopped machine still bills storage.</li>
+<li>T3 After terminating, list the machines and confirm deletion with your own eyes.</li>
+<li>T4 Record this machine's cost in the version log.</li>
+<li>T5 Idle over 15 minutes: close following T1 to T4; leave no machine spinning empty.</li>
+</ul>
+<h3>7. Failure Cap (R)</h3>
+<p>The same error retried 2 times and still failing: stop, hand the complete log back to the decision side, and do not keep swapping images to try your luck.</p>
+<h3>8. Common Mistakes Checklist</h3>
+<ul>
+<li>Injecting a stay-alive command into the startup arguments: it overwrites the image startup script, and remote login and initialisation never run.</li>
+<li>Building a virtual environment on the network disk: the library-loading step stalls, and it gets misread as broken code.</li>
+<li>Booting without a capacity check, then dry-waiting when there is no stock: pulling models on the fallback route usually costs less than waiting.</li>
+<li>Handing over a task on "running" alone: without the three checks, the task only dies more expensively.</li>
+<li>Closing with stop instead of terminate: you leave, and the storage meter keeps running.</li>
+<li>Swapping images after the same error, again and again: every swap repays the environment time; at the two-retry cap, hand back the log.</li>
+</ul>
+<p>Data date: 2026-11-16. Sources: PlAIground Lab's cloud GPU operations runbook and past boot-incident records, de-identified; the provider is referred to by category only, and the datacenter as "the disk-bound datacenter".</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
