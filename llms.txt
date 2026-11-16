@@ -2,6 +2,10 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [用 Email 當任務巴士：把外部 AI 工人接進工作流（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-15-email-task-bus/)
+- [Using Email as a Task Bus: Wiring an External AI Worker into Your Workflow (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-15-email-task-bus/)
+- [Agent edition, 中文：2026-11-15-email-task-bus](https://blog.plaigroundlab.com/posts/2026-11-15-email-task-bus.agent.md)
+- [Agent edition, English: 2026-11-15-email-task-bus](https://blog.plaigroundlab.com/posts/2026-11-15-email-task-bus.en.agent.md)
 - [預防措施不准變成用量大頭：零 LLM 看門狗設計（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-14-zero-llm-watchdog/)
 - [Prevention Must Not Become the Biggest Usage Line: Designing Zero-LLM Watchdogs (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-14-zero-llm-watchdog/)
 - [Agent edition, 中文：2026-11-14-zero-llm-watchdog](https://blog.plaigroundlab.com/posts/2026-11-14-zero-llm-watchdog.agent.md)
