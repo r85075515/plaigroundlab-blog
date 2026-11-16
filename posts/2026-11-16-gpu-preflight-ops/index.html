@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>開 GPU 機器前先驗貨：雲端 GPU 運維紀律 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="開 GPU 機器前先驗貨：雲端 GPU 運維紀律">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-16-gpu-preflight-ops/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-16-gpu-preflight-ops/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-16-gpu-preflight-ops/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-16-gpu-preflight-ops/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-16">2026-11-16</time></p>
+    <ul class="post-tags"><li>gpu</li><li>operations</li></ul>
+    <h1 class="post-title">開 GPU 機器前先驗貨：雲端 GPU 運維紀律</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d11.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-16-gpu-preflight-ops.agent.md">中文版</a>・<a href="/posts/2026-11-16-gpu-preflight-ops.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>雲端 GPU 是按小時燒錢的機器，開錯一台、開著不關、或是機器開起來卻根本用不了 GPU，都是直接把錢換成等待。這套紀律是我們在反覆開機、卡關、重開的過程裡，一條一條付學費換來的，核心只有一句話：<strong>先驗貨，再丟任務；先確認產出，再關機——而且是刪機，不是停機。</strong></p>
+<p>第一課是映像與啟動指令。官方映像本身有一套啟動腳本，負責把遠端登入與初始化跑起來；如果在啟動參數欄裡塞一句看似無害的「睡著不要退出」，就會把映像原本的啟動腳本整個蓋掉，機器看起來在跑，實際上什麼都沒初始化。規矩很簡單：<strong>用官方映像、啟動參數留空</strong>，需要常駐靠機器本來就是長時間運行的特性，不靠自己塞指令。</p>
+<p>第二課是 Python 環境放哪裡。網路磁碟很方便，模型與資料放上面天經地義；但把 Python 虛擬環境也建在網路磁碟上，程式一啟動，光是載入函式庫就會卡死——徵兆是連最底層的系統工具都卡住，那已經不是 Python 的問題，是「有東西在讀網路磁碟上的檔案」這一步卡住。規矩：<strong>用系統 Python、套件裝在容器本機磁碟，網路磁碟只放模型、資料集與輸出。</strong></p>
+<p>第三課是容量。綁著網路磁碟的機房沒貨時，乾等是最貴的選項：先查容量，沒貨就改開不掛磁碟的機器，模型從公開來源重新拉，結果上傳後立刻刪機。等一台不會來的機器，不會比重新拉一次模型便宜。</p>
+<p>第四課是開機三查。機器顯示運行中，不等於 GPU 能用：顯示卡清單要看得到卡、運算函式庫要回報 GPU 可用、磁碟空間要正常，三項全過才准丟任務。曾經遇過套件自動裝到比主機驅動還新的運算版本，結果 GPU 可用判定直接是假——三查裡的第二查就是為這種情況存在的，fail fast 比任務跑到一半才死便宜得多。</p>
+<p>第五課是收尾。任務做完、產出確認存好之後，要<strong>終止（terminate）不是停止（stop）</strong>：停止狀態照樣收磁碟與儲存費。刪完還要再列一次機器清單親眼確認它真的不在了，並把這一台的成本記進版本紀錄。閒置超過十五分鐘同理：開著不用，就是在租一台空氣。</p>
+<p>最後是失敗紀律：同一個錯誤重試兩次仍失敗就停，把紀錄貼回來，不要一直換映像碰運氣。換映像是最貴的擲骰子，每換一次都要重付一輪環境時間。</p>
+<p>後段是完整規格：開機前檢查、開機三查、環境與長任務紀律、容量不足的轉線規則、收尾規則、失敗上限，以及依階段判定的結果代碼。任何要操作雲端 GPU 的人——或任何被交代開機的 AI——都可以整套照著做。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 開機前（P）</h3>
+<ul>
+<li>P1 映像：官方 PyTorch 映像（CUDA 12.x 系列）；啟動參數／Docker 參數留空，不塞任何指令。</li>
+<li>P2 命名與單機：本方開的機器一律用約定前綴命名；同一時間最多一台 GPU 機器在跑。</li>
+<li>P3 容量先驗：先對「綁磁碟的目標機房」查目標 GPU 的容量，再開機；不先查就開，視為未驗貨。</li>
+</ul>
+<h3>2. 開機三查（V，運行後、三項全過才丟任務）</h3>
+<ul>
+<li>V1 顯示卡清單指令能列出目標 GPU。</li>
+<li>V2 運算檢查：Python 內檢查 GPU 可用回報為真。</li>
+<li>V3 磁碟檢查：空間清單正常、目標磁碟可讀。
+任一項不過：不丟任務，先診斷；診斷順序先懷疑環境讀取路徑（網路磁碟上的環境檔），再懷疑版本與驅動對齊。</li>
+</ul>
+<h3>3. 環境紀律（E）</h3>
+<ul>
+<li>E1 用系統 Python，套件裝容器本機磁碟；絕不在網路磁碟上建虛擬環境。</li>
+<li>E2 網路磁碟只放模型、資料集、輸出；需要高速讀取的模型可先複製到本機再讀。</li>
+</ul>
+<h3>4. 長任務紀律（L）</h3>
+<ul>
+<li>L1 長任務用背景常駐方式跑（nohup 或 tmux 類），紀錄寫檔、以 tail 輪詢，不讓連線中斷殺掉任務。</li>
+<li>L2 每 250 步存一次檢查點，檢查點附雜湊值存進磁碟或程式庫，中斷可續跑。</li>
+</ul>
+<h3>5. 容量轉線（F）</h3>
+<p>綁磁碟機房查無容量時，不乾等：改開不掛磁碟的機器，模型與資料從公開來源（模型 Hub／程式庫）重新拉取，產出上傳確認後刪機。</p>
+<h3>6. 收尾（T）</h3>
+<ul>
+<li>T1 產出確認存好，才准關機。</li>
+<li>T2 用終止（terminate），不用停止（stop）；停止仍收儲存費。</li>
+<li>T3 終止後列機器清單，親眼確認已刪除。</li>
+<li>T4 把本台成本記進版本紀錄。</li>
+<li>T5 閒置逾 15 分鐘：照 T1 至 T4 收尾，不留空轉機器。</li>
+</ul>
+<h3>7. 失敗上限（R）</h3>
+<p>同一個錯誤重試 2 次仍失敗：停手，把完整紀錄交回決策端，不准繼續換映像碰運氣。</p>
+<h3>8. 常見錯誤清單</h3>
+<ul>
+<li>在啟動參數塞常駐指令：蓋掉映像啟動腳本，遠端登入與初始化都不會跑。</li>
+<li>把虛擬環境建在網路磁碟：載入函式庫那一步卡死，還會誤判成程式壞掉。</li>
+<li>沒查容量就開機、沒貨還乾等：轉線拉模型的成本通常低於等待。</li>
+<li>只看「運行中」就丟任務：三查沒過，任務只會死得更貴。</li>
+<li>收尾用停止不用終止：人走了，儲存費繼續跳。</li>
+<li>同錯換映像一直試：每換一次重付環境時間；兩次上限到了就交紀錄。</li>
+</ul>
+<p>資料日期：2026-11-16。素材來源：PlAIground Lab 的雲端 GPU 運維 runbook 與歷次開機事故紀錄，去識別化整理；供應商只以類別指稱，機房以「綁磁碟機房」指稱。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
