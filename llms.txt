@@ -2,6 +2,10 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [例行寫入走固定入口：消滅審批卡轟炸（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-17-single-fixed-entry/)
+- [One Fixed Entry Point for Routine Writes: Ending Approval-Card Bombardment (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-17-single-fixed-entry/)
+- [Agent edition, 中文：2026-11-17-single-fixed-entry](https://blog.plaigroundlab.com/posts/2026-11-17-single-fixed-entry.agent.md)
+- [Agent edition, English: 2026-11-17-single-fixed-entry](https://blog.plaigroundlab.com/posts/2026-11-17-single-fixed-entry.en.agent.md)
 - [開 GPU 機器前先驗貨：雲端 GPU 運維紀律（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-16-gpu-preflight-ops/)
 - [Verify Before You Boot: Cloud GPU Operations Discipline (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-16-gpu-preflight-ops/)
 - [Agent edition, 中文：2026-11-16-gpu-preflight-ops](https://blog.plaigroundlab.com/posts/2026-11-16-gpu-preflight-ops.agent.md)
