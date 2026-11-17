@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One Fixed Entry Point for Routine Writes: Ending Approval-Card Bombardment — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="One Fixed Entry Point for Routine Writes: Ending Approval-Card Bombardment">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-17-single-fixed-entry/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-17-single-fixed-entry/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-17-single-fixed-entry/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-17-single-fixed-entry/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-17">2026-11-17</time></p>
+    <ul class="post-tags"><li>automation</li><li>agent-ops</li></ul>
+    <h1 class="post-title">One Fixed Entry Point for Routine Writes: Ending Approval-Card Bombardment</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d12.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-17-single-fixed-entry.en.agent.md">English</a> · <a href="/posts/2026-11-17-single-fixed-entry.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>An approval mechanism exists so a human can glance at a key action before it runs, but it has a hidden unit of billing: <strong>every distinct command string is a new approval card.</strong> If routine writes are improvised into a fresh command every time — a different filename, a different argument, a different tool — the system treats each one as an action it has never seen, and the human has to press Allow again and again.</p>
+<p>We learned this the hard way. Delivering six-plus files one by one, generating a download link per file, meant every command string was different, and more than six approval cards popped up within an hour — drawing an on-the-spot protest: can this bombardment please stop? The files had done nothing wrong; the execution shape had. <strong>One class of routine action had been split into a pile of commands that all looked different from each other.</strong></p>
+<p>The fix is not to press faster, and not to switch approvals off. It is to converge routine actions onto a <strong>fixed entry point</strong>: one registered script whose command string is always exactly the same, while everything that varies — which repository, which path, where the content comes from — is written into a separate <strong>job-spec file</strong> and never enters the command line. The command line never changes, so one approval covers the long term; the spec file is data, not a new command.</p>
+<p>A fixed entry point also solves a second problem for free: safety guards can be installed in exactly one place. Before writing anything, the entry point loads the entire batch from the spec and compares each item against the current remote version: if new content drops any heading the remote version has, or shrinks by more than twenty percent and more than ten lines, the whole batch is blocked with zero writes — an accident class we have also paid for, where a write silently wiped out whole sections someone else had written. Install the guard once, at the entrance, and every routine write is protected automatically, without relying on whoever runs it remembering to check.</p>
+<p>The third discipline is where credentials live: the spec file may contain only the operation list — <strong>never any key or credential value</strong>. Credentials come from the existing custody mechanism, attached by the entry point when the request goes out; they never pass through the spec, the command line, or any conversation.</p>
+<p>A fixed entry point is not, of course, a universal pass. A target appearing for the first time, a new permission, a secret someone wants to write into the spec — none of that is "routine", none of it sits inside the one approval's coverage, and all of it escalates to the decision-maker as before. The second half of this post writes the boundary down hard: what counts as routine, the priority order of the four judgement codes, and the all-or-nothing preflight, so that anyone — or any AI — handed a write scenario can produce exactly one judgement.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. The Shape of a Fixed Entry Point (F)</h3>
+<ul>
+<li>F1 One script: all routine external writes (creating, updating, and deleting repository files) run through one registered script only, with a command string that is fixed word-for-word and never changes.</li>
+<li>F2 External spec: what each run writes goes into a separate job-spec file — each operation states its type (put / delete), target repository, path, content source (a local file or literal text), and an optional commit message; the command line carries no filename and no value.</li>
+<li>F3 One batch, one run: a batch of operations lives in one spec, runs through the entry point once, and costs at most one approval card; it runs in the background to completion.</li>
+<li>F4 When the spec is cleared: the spec file is cleared only after the whole batch has succeeded; if it fails midway, the spec is kept for diagnosis and rerun.</li>
+<li>F5 File delivery follows the same rule: delivering multiple files means one attachment, or one archive in a single send — never a generated link per file. Per-file links and per-file commands are the same bombardment.</li>
+</ul>
+<h3>2. The Definition of Routine (R; All Must Hold)</h3>
+<ul>
+<li>R1 Existing type: the operation type is one done before (routine repository writes, routine file delivery), not a category of action appearing for the first time.</li>
+<li>R2 Target on the list: the target repository and path are inside the routine allowlist.</li>
+<li>R3 No secrets in the spec: neither the spec file nor the command line contains any key, password, or credential value; credentials are attached by the entry point through the existing custody mechanism.</li>
+<li>R4 No expansion: no new account, no new tool installation, no new permission, and no new external relationship is required.</li>
+</ul>
+<h3>3. Whole-Batch Preflight Guards (G; Checked Before Any Write)</h3>
+<ul>
+<li>G1 Preflight first: before writing any single item, the entry point loads the whole batch and fetches the current remote version of each existing target for comparison; if any item trips a guard, the batch aborts with zero writes.</li>
+<li>G2 Heading guard: new content that drops any Markdown heading the remote version has trips the guard.</li>
+<li>G3 Shrink guard: new content that is smaller than the remote version by more than 20% and by more than 10 lines trips the guard.</li>
+<li>G4 Override: only a decision-maker's explicit overwrite approval, recorded in the spec, releases G2 / G3. An override releases the guards only — it never widens Section 2's routine boundary, so an off-list target escalates even with an override.</li>
+</ul>
+<h3>4. The Four Judgements (Codes and Priority Order)</h3>
+<p>For any write scenario, take the first code that holds in the following priority order; each scenario takes exactly one code:</p>
+<ol>
+<li>E Escalate: the scenario violates any of R2, R3, or R4 — the target is off-list, the spec or command contains a secret, or expansion / a new account / a new tool is required. Do not execute; hand it to the decision-maker.</li>
+<li>R Reroute to the fixed entry point: the substance is routine (R1 to R4 all hold) but the proposed execution shape is not the fixed entry point — an improvised new command string, operations split to run one file at a time, or an unregistered tool swapped in. Do not execute as proposed; rewrite it as one spec and rerun through the fixed entry point.</li>
+<li>G Guard block: the fixed entry point is used, but preflight trips G2 or G3 and the spec holds no explicit decision-maker override. Zero writes for the whole batch; fix the spec or obtain the override, then rerun.</li>
+<li>P Proceed: R1 to R4 all hold, the fixed entry point is used, and preflight passes (or a guard trips but an explicit override is on record). Execute the whole batch from the spec, and clear the spec file only after everything succeeds.</li>
+</ol>
+<h3>5. Common Mistakes Checklist</h3>
+<ul>
+<li>Running one upload per file and improvising one command per write: every string is a new card — that is exactly how six cards in an hour happened.</li>
+<li>Splicing filenames and values into the command line: change the string and the standing approval's coverage lapses; the next batch starts again at card number one.</li>
+<li>Checking guards item by item while writing: discovering at item three that item one was bad means the first two are already out. Preflight must cover the whole batch first, and abort with zero writes.</li>
+<li>Writing a key into the spec for convenience: a spec is a data file that gets read, stored, and handed around; a secret that enters it has effectively spread.</li>
+<li>Using "there was an override last time" to pass a new off-list target: an override releases guards only; it never expands the routine scope.</li>
+</ul>
+<p>Data date: 2026-11-17. Sources: PlAIground Lab's 2026-10-22 per-file upload approval-bombardment incident and the 2026-10-31 fixed-entry-point standardisation record, de-identified; tools and repositories are referred to by category only.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
