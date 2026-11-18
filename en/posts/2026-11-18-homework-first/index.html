@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Do Your Homework Before You Build: Stop Reinventing Wheels by Trial and Error — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Do Your Homework Before You Build: Stop Reinventing Wheels by Trial and Error">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-18-homework-first/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-18-homework-first/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-18-homework-first/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-18-homework-first/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-18">2026-11-18</time></p>
+    <ul class="post-tags"><li>workflow</li><li>agent-ops</li></ul>
+    <h1 class="post-title">Do Your Homework Before You Build: Stop Reinventing Wheels by Trial and Error</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d13.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-18-homework-first.en.agent.md">English</a> · <a href="/posts/2026-11-18-homework-first.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>The most expensive part of trial-and-error building is not the trial and error itself. It is <strong>re-deriving, from zero, an answer somebody else already published.</strong></p>
+<p>One of our prompt-tuning lines spent a whole stretch patching by the round: wherever the output looked wrong, another sentence went into the prompt to block it — block one side, leak on the other, patch the leak, round after round. When we finally went back and searched the public record, the problems we had been hitting for months — chained generation drifts segment by segment, prompts cannot fix geometry-level problems, the strongest identity lock for a character is an adapter module rather than words, seams need re-anchoring — <strong>were all established community consensus</strong>, with settled explanations, settled fixes, and settled failure records. Most of the tuition we paid went to reinventing wheels that already existed.</p>
+<p>So we set a rule: <strong>for a new model, a new pipeline, or a new method, do the homework before starting; when a problem shows up, search before you tune — and before a second attempt at the same problem, no homework means no next run.</strong> The homework runs on two tracks: outward, to the public world — official documentation, community playbooks, papers, existing tools, other people's failure records; and inward, to our own handover — the task's checklist and runbook, the latest status summary, and older records only when the first two are not enough. The inward track already existed as a start-of-work ritual; this rule adds the outward one: <strong>both tracks pass before any building starts.</strong></p>
+<p>One exception needs stating up front: some subjects have details the public world cannot publish and cannot answer. There, homework is not waived but rerouted: the outward search still happens, its empty result is recorded, and then the team reads its own ledgers and trial records thoroughly. In those stretches, your own trial data is the asset — re-deriving it from zero is throwing the asset away.</p>
+<p>A companion rule: homework is not done when you have looked — <strong>the basis goes into the task brief or dispatch note</strong>: which document you consulted, which conclusion you adopted, which layer of the internal record you read, all written down, so the next person (or AI) does not have to guess. Saying "I checked" out loud counts, under this rule, as not having checked. The second half of this post writes the triggers, the completion tests, how evidence must be used, and the no-public-material path down hard, so anyone — or any AI — handed a start-of-work scenario can produce exactly one judgement.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. The Two Homework Tracks (X / I)</h3>
+<ul>
+<li>X External homework: search the public world. There are five source types — official documentation, community playbooks, papers, existing tools, and other people's failure records.</li>
+<li>I Internal homework: read your own handover in three layers — I1 the task's checklist and runbook; I2 the latest status summary; I3 older records, opened only when I1 and I2 are not enough.</li>
+<li>The division of labour: internal homework answers "what have we already tried", external homework answers "what has the whole world already tried". Do only one track and you will personally step into the other track's pits.</li>
+</ul>
+<h3>2. Triggers (T)</h3>
+<ul>
+<li>T1 New-build trigger: a new model, a new pipeline, a new method — the first time the team does this thing — requires both homework tracks completed before starting.</li>
+<li>T2 Retry trigger: after a first attempt at a problem fails, the homework comes before the second attempt. Tweaking parameters, rewording, or reordering and trying again is still the same problem, not a new one.</li>
+<li>T3 Exemption: rerunning a proven, established configuration unchanged is not a "new build" and does not trigger T1; but if the rerun fails, T2 applies from there.</li>
+</ul>
+<h3>3. Completion Tests (W)</h3>
+<ul>
+<li>W1 External complete: the brief names the concrete sources actually consulted (names or links) and the conclusions adopted; if nothing usable was found, it states which source types were searched and that all returned nothing usable. Writing merely "checked" does not count as complete.</li>
+<li>W2 Internal complete: the brief states that I1 and I2 were read; if I3 was read it is listed, and if it was not, the brief notes "I1 and I2 were sufficient".</li>
+<li>W3 Written or it did not happen: a homework basis that is not written into the task brief or dispatch note counts as not done — mentioned aloud, or mentioned in a chat, does not count.</li>
+</ul>
+<h3>4. Using Evidence, and the No-Public-Material Path (V)</h3>
+<ul>
+<li>V1 Follow the evidence: when the homework has produced a known fix or a known cause, the plan must follow the evidence. To deviate, the brief must state the deviation reason in writing (for example, our own measured data differs from the public source's premise, with the data source attached). With the reason written, the deviation is compliant.</li>
+<li>V2 Ignoring evidence means rework: the homework evidence is in hand, yet the plan never mentions it, states no written deviation reason, and intends to trial-and-error from zero — that is the definition of the brute-force approach itself, and it goes straight back for rework.</li>
+<li>The no-public-material path: once the external search has genuinely been done and its empty result recorded in the W1 format, the homework switches to the internal track as its basis: all three layers read, the basis written into the brief, and work proceeds on the internal basis. Skipping the external search and simply declaring "nothing exists" does not qualify.</li>
+</ul>
+<h3>5. The Four Judgements (Codes and Priority Order)</h3>
+<p>For any start-of-work scenario that has triggered T1 or T2, take the first code that holds in the following priority order; each scenario takes exactly one code:</p>
+<ol>
+<li>R Rework the approach: the homework is complete and the evidence gives a known fix or known cause, but the plan ignores the evidence with no written reason and intends to trial-and-error from zero. Do not start; follow the evidence, or add a written deviation reason to the brief and re-judge.</li>
+<li>H Homework first: T1 or T2 has triggered, but required homework is incomplete, or the basis is not written into the brief (violating W3). Do not start and do not schedule the next attempt; complete the homework, write it down, and re-judge.</li>
+<li>L Proceed on the internal basis: the external search was done and its empty result recorded in format, the three internal layers are complete, and the basis is written into the brief. Start, on the internal basis.</li>
+<li>P Proceed: the triggered homework is fully complete (the external search produced usable evidence), the basis is written into the brief, and the plan follows the evidence — or a deviation reason is stated in writing. Start, per the brief.</li>
+</ol>
+<h3>6. Common Mistakes Checklist</h3>
+<ul>
+<li>Start first and search when stuck: for new builds, the homework belongs before the start, not after the first round of tuition has been paid.</li>
+<li>Treating a parameter tweak as a new problem: the same failure with different numbers is still a second attempt, and T2 still triggers.</li>
+<li>Homework done but never written down: the next person to pick the work up cannot see the basis, which means the team, in effect, never did it. W3 is a hard line.</li>
+<li>Finding a ready-made fix and not using it: assuming your own brute force will be faster usually makes it the slowest route — a known wheel does not need reinventing.</li>
+<li>Declaring "nothing exists" without searching: the no-public-material path requires a real search with a record. Skipping the external track and going straight to the internal one is cutting corners, not an exception.</li>
+</ul>
+<p>Data date: 2026-11-18. Sources: PlAIground Lab's 2026-10-31 "homework before building" standardisation record and the three-layer start-of-work ritual specification, de-identified; tools and projects are referred to by category only.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
