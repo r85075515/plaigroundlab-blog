@@ -2,6 +2,10 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [先做功課再動手：禁止土法煉鋼（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-18-homework-first/)
+- [Do Your Homework Before You Build: Stop Reinventing Wheels by Trial and Error (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-18-homework-first/)
+- [Agent edition, 中文：2026-11-18-homework-first](https://blog.plaigroundlab.com/posts/2026-11-18-homework-first.agent.md)
+- [Agent edition, English: 2026-11-18-homework-first](https://blog.plaigroundlab.com/posts/2026-11-18-homework-first.en.agent.md)
 - [例行寫入走固定入口：消滅審批卡轟炸（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-17-single-fixed-entry/)
 - [One Fixed Entry Point for Routine Writes: Ending Approval-Card Bombardment (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-17-single-fixed-entry/)
 - [Agent edition, 中文：2026-11-17-single-fixed-entry](https://blog.plaigroundlab.com/posts/2026-11-17-single-fixed-entry.agent.md)
