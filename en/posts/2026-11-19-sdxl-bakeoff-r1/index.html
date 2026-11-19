@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Best-Looking Model Was the Least Obedient: Three SDXL Models, Same Prompts, Tested Head-to-Head — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="The Best-Looking Model Was the Least Obedient: Three SDXL Models, Same Prompts, Tested Head-to-Head">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-19-sdxl-bakeoff-r1/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-19-sdxl-bakeoff-r1/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-19-sdxl-bakeoff-r1/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-19-sdxl-bakeoff-r1/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-19">2026-11-19</time></p>
+    <ul class="post-tags"><li>automation</li><li>workflow</li></ul>
+    <h1 class="post-title">The Best-Looking Model Was the Least Obedient: Three SDXL Models, Same Prompts, Tested Head-to-Head</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d14.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-19-sdxl-bakeoff-r1.en.agent.md">English</a> · <a href="/posts/2026-11-19-sdxl-bakeoff-r1.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>Are community models really stronger than the stock base model? We put three SDXL models into the same examination room under one unified specification: the stock SDXL base 1.0, the community favourite Juggernaut XL v9, and RealVisXL V5.0, which specialises in realism — four test prompts, the same seed, the same parameters, nobody allowed to run on their home settings.</p>
+<p>The conclusion first, and it is a little surprising: <strong>the composite winner is Juggernaut XL v9 (8.25), the stock base comes second (7.75), and RealVisXL V5.0 third (7.5) — but on the one test that measures obedience, the only model that got everything right was the stock base.</strong> The deciding prompt asked for a purple elephant wearing a yellow-and-black striped party hat, with a red balloon, standing in a snowy pine forest. Both community models, independently, changed the red balloon to yellow — presumably because yellow matched the striped hat better. Silently "fixing" your strange requirement in the name of a better-looking picture is a hard flaw for creators who need precise control: you do not want the version it thinks looks good; you want the version you ordered.</p>
+<p>On image quality, the community lead is just as real. Juggernaut's portrait close-up is the most polished — makeup, hair strands, and gaze all land; RealVis has the most natural skin texture, the closest to a real photograph; in the full-body rainy-night scene Juggernaut is the most cinematic and RealVis the most like a street photograph. The stock base even slipped on the portrait test itself: the prompt said shoulder-length hair, and it delivered long hair. So the real lesson of this match is not "which model is strongest" but that <strong>image quality and obedience are two separate axes, and choosing a model means first knowing which axis you are buying</strong> — the highest composite scorer may rank last on exactly the dimension you care about most. The second half of this post writes the examination specification, the full scores, the per-test observations, and the selection judgement down hard, so anyone — or any AI — handed a selection scenario can produce exactly one answer.</p>
+<p>Comparison sheets (each left to right = base / Juggernaut / RealVis): <a href="https://drive.google.com/file/d/1me8VvS5Vu2Hs1yPC51aJ31MxKVFOazkJ/view">Portrait close-up</a> | <a href="https://drive.google.com/file/d/1SkVEZ4V9nJXHBj6MSQJH-XsKoewIyH0w/view">Full-body scene</a> | <a href="https://drive.google.com/file/d/1csTrxVxEBSVF__O9WtqJm1uqmOxLdTuB/view">Pure scene</a> | <a href="https://drive.google.com/file/d/1ZDndxdpj_RHbx3WrziSKP8hesdEnt8tb/view">Instruction fidelity</a></p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Examination Specification (Fairness Conditions)</h3>
+<ul>
+<li>Platform: a free-tier cloud notebook environment with a T4-class GPU. Speed figures are comparable only on the same platform.</li>
+<li>One unified specification for every model: seed 42, 30 steps, cfg 7, 1024×1024, and the same negative prompt set. If any model switches to its own customary parameters, this round's ranking no longer applies (see Section 5).</li>
+<li>Four test prompts: Q1 portrait close-up (a 29-year-old Japanese woman, shoulder-length wavy hair); Q2 full-body scene (a rainy Tokyo street at night, trench coat and umbrella); Q3 pure scene (a lakeside mountain cabin at dusk); Q4 instruction fidelity (a purple elephant + a yellow-and-black striped party hat + a red balloon, in a snowy pine forest).</li>
+<li>Scoring method: a single blind reviewer — the reviewer sees the images without filename order. The scores are one reviewer's result, not a multi-judge panel consensus (see Section 5).</li>
+</ul>
+<h3>2. Score Table and Composite Rule</h3>
+<p>Each of the four dimensions is scored out of 10; the composite is the unweighted mean of the four:</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Portrait</th>
+<th>Full-body / Scene</th>
+<th>Instruction fidelity</th>
+<th>Speed</th>
+<th>Composite</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Juggernaut XL v9</td>
+<td>9</td>
+<td>9</td>
+<td>7</td>
+<td>8</td>
+<td>8.25</td>
+</tr>
+<tr>
+<td>SDXL base 1.0</td>
+<td>7</td>
+<td>7</td>
+<td>9</td>
+<td>8</td>
+<td>7.75</td>
+</tr>
+<tr>
+<td>RealVisXL V5.0</td>
+<td>8</td>
+<td>9</td>
+<td>7</td>
+<td>6</td>
+<td>7.5</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>The "Full-body / Scene" column combines performance on Q2 and Q3; the "Instruction fidelity" column refers specifically to attribute accuracy on Q4 (whether each specified colour and object is right). The hair-length miss in Q1 is a qualitative observation and is not folded into that score (see N1 in Section 3).</li>
+<li>Speed, split open: generation time is in the same class for all three, 26–28 seconds per image; the gap is in loading (including first download) — base 104 seconds, Juggernaut 109 seconds, RealVis 206 seconds (a larger model repository). RealVis's speed score of 6 is deducted for loading, not generation.</li>
+</ul>
+<h3>3. Per-Test Observations (N)</h3>
+<ul>
+<li>N1 Portrait (Q1): Juggernaut is the most polished (makeup, hair strands, and gaze all land); RealVis has the most natural skin, the closest to a real photograph; base rendered the explicitly specified shoulder-length hair as long hair — obedience leaked already on the portrait test. This is a qualitative observation; the instruction-fidelity score remains anchored to Q4.</li>
+<li>N2 Full-body scene (Q2): Juggernaut is the most cinematic (rainy-night neon, wet-ground reflections); RealVis is the most like a street photograph; all three pass on full-body proportions and hands.</li>
+<li>N3 Pure scene (Q3): the three are close to tied, all leaning illustrative, and all handle the golden-dusk mood adequately.</li>
+<li>N4 Instruction fidelity (Q4): only base got all three attributes right — purple elephant, striped hat, red balloon; both Juggernaut and RealVis changed the red balloon to yellow. Separately, no model used the elephant's trunk to "hold" the balloon — a shared, unscored observation.</li>
+<li>N5 Speed: generation at 26–28 seconds per image is the same class for all three; loading times differ by nearly a factor of two (104 / 109 / 206 seconds). Saying "RealVis is slow" as if it generated slowly is misreading the table.</li>
+</ul>
+<h3>4. Selection Judgement (Codes and Priority Order)</h3>
+<p>For any selection scenario, take the first code that holds in the following priority order; each scenario takes exactly one code:</p>
+<ol>
+<li>H Hold the decision: the scenario explicitly states any of the following — (a) production will switch to the community customary parameters (cfg 5–6 plus a DPM++ 2M sampler) yet wants this round's ranking as the final ranking; (b) speed is the deciding basis, but the execution hardware is not this round's T4 class, or this round's speed scores are to be extrapolated to other hardware; (c) "RealVis generates the slowest" is given as the reason to eliminate it (contradicted by the N5 measurements). This round's evidence cannot support that decision; retest, or restate the claim, and re-judge.</li>
+<li>B Select SDXL base 1.0: the requirement explicitly demands that specified attributes (colours, objects, counts) be exact item by item, with any single miss counting as failure. Base has the highest instruction-fidelity score (9) and is the only model that passed Q4 in full.</li>
+<li>R Select RealVisXL V5.0: the requirement explicitly names "the most natural skin texture, the closest to a real photograph" as the top criterion. Under N1 and N2's qualitative observations, RealVis wins on that criterion; the composite does not override this judgement.</li>
+<li>J Select Juggernaut XL v9: every remaining scenario — portrait-led, full-body/scene-led, or general use. Juggernaut's portrait score (9) is the highest; where full-body/scene ties with RealVis at 9, the composite breaks the tie (8.25 &gt; 7.5); general use takes the highest composite directly.</li>
+</ol>
+<h3>5. Honest Limits (Where This Ranking Applies)</h3>
+<ul>
+<li>Home parameters untested: this round ran on a unified specification (cfg 7); Juggernaut's and RealVis's community customary parameters are cfg 5–6 plus a DPM++ 2M sampler, and a rematch on their home parameters could flip the ranking — that is the next round's subject.</li>
+<li>Speed is platform-bound: generation and loading figures were all measured on a free T4-class environment; changing hardware requires a retest, never extrapolation.</li>
+<li>A single blind reviewer: the scores come from one reviewer (images seen without filename order), not a panel; they are editorial judgements, not laboratory measurements.</li>
+<li>Next round preview: the two community models rematch the same prompts on their own customary parameters, and any newly released model gets a supplementary test as soon as it appears.</li>
+</ul>
+<h3>6. Common Mistakes Checklist</h3>
+<ul>
+<li>Choosing by composite alone: the composite averages four axes away, and the dimension you care about most may be exactly the winner's lowest score.</li>
+<li>Reporting slow loading as slow generation: RealVis generates in the same class as the other two; it is slow to load. Only short, single-image sessions are hurt by loading; long batches amortise it.</li>
+<li>Applying this ranking to home-parameter production: the ranking holds only for the unified specification; change the parameters and it is a different match.</li>
+<li>Assuming a "smarter" community model will also be more obedient: this round's evidence points the other way — the better a model is at prettifying a picture, the more likely it is to quietly rewrite your specified attributes.</li>
+</ul>
+<p>Data date: 2026-11-19 (measured 2026-11-08). Sources: PlAIground Lab's Model Bake-off R1 material pack (scores, per-test analysis, and raw speed records), de-identified; the full scoring rubric is kept in an internal evaluation library.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
