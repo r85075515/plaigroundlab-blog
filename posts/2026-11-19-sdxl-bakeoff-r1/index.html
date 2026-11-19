@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>畫質贏家最不聽話：三個 SDXL 模型同題實測 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="畫質贏家最不聽話：三個 SDXL 模型同題實測">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-19-sdxl-bakeoff-r1/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-19-sdxl-bakeoff-r1/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-19-sdxl-bakeoff-r1/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-19-sdxl-bakeoff-r1/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-19">2026-11-19</time></p>
+    <ul class="post-tags"><li>automation</li><li>workflow</li></ul>
+    <h1 class="post-title">畫質贏家最不聽話：三個 SDXL 模型同題實測</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d14.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-19-sdxl-bakeoff-r1.agent.md">中文版</a>・<a href="/posts/2026-11-19-sdxl-bakeoff-r1.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>社群模型真的比原廠強嗎？我們把三個 SDXL 模型拉進同一個考場，用同一組規格硬碰硬：原廠 SDXL base 1.0、社群熱門的 Juggernaut XL v9、主打真實感的 RealVisXL V5.0，四道考題、同一顆種子、同一組參數，誰也不許用自己的主場設定。</p>
+<p>結論先講，而且有點意外：<strong>綜合分第一名是 Juggernaut XL v9（8.25），原廠 base 第二（7.75），RealVisXL V5.0 第三（7.5）——但最考「聽不聽話」的那道怪指令題，唯一全對的是原廠 base。</strong>決勝題要求畫一頭紫色大象、戴黃黑條紋派對帽、帶一顆紅氣球，站在雪地松林裡。兩家社群模型不約而同把紅氣球改成了黃色——大概是覺得黃色跟條紋帽比較搭。為了畫面好看，擅自「修正」你奇怪的要求，這對需要精確控制的創作者是硬傷：你要的不是它覺得好看的版本，你要的是你下令的那個版本。</p>
+<p>反過來看畫質，社群模型的領先也很實在。人像特寫 Juggernaut 最精緻，妝感、髮絲、眼神都到位；RealVis 的膚質最自然、最像真人照片；雨夜全身場景 Juggernaut 最有電影感，RealVis 最像街頭實拍。原廠 base 甚至在人像題就先漏了氣：題目明寫肩長髮，它給了一頭長髮。所以這場比賽真正的教訓不是「誰最強」，而是<strong>畫質和服從度是兩條軸，選模型要先認清自己買的是哪一條</strong>——總分最高的模型，在你最在乎的那一格可能正好是最後一名。這篇後段把考場規格、完整評分、逐題觀察與選型判定寫死，讓任何人（或任何 AI）拿到一個選型情境，都能給出唯一答案。</p>
+<p>對照圖（每張左→右＝base／Juggernaut／RealVis）：<a href="https://drive.google.com/file/d/1me8VvS5Vu2Hs1yPC51aJ31MxKVFOazkJ/view">人像特寫</a>｜<a href="https://drive.google.com/file/d/1SkVEZ4V9nJXHBj6MSQJH-XsKoewIyH0w/view">全身場景</a>｜<a href="https://drive.google.com/file/d/1csTrxVxEBSVF__O9WtqJm1uqmOxLdTuB/view">純場景</a>｜<a href="https://drive.google.com/file/d/1ZDndxdpj_RHbx3WrziSKP8hesdEnt8tb/view">指令保真</a></p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 考場規格（公平條件）</h3>
+<ul>
+<li>平台：免費版雲端筆記本環境，T4 等級 GPU。速度數字僅供同一平台比較。</li>
+<li>全員統一規格：種子 42、30 步、cfg 7、1024×1024、同一組反向提示詞。任何一家改用自己的慣用參數，本輪排名即不適用（見第 5 節）。</li>
+<li>四道考題：Q1 人像特寫（29 歲日本女性、肩長波浪髮）；Q2 全身場景（雨夜東京街頭、風衣撐傘）；Q3 純場景（山湖小木屋黃昏）；Q4 指令保真（紫色大象＋黃黑條紋派對帽＋紅氣球，雪地松林）。</li>
+<li>評分方式：單人盲評——評者看圖不看檔名順序。評分是單人結果，不是多人評審共識（見第 5 節）。</li>
+</ul>
+<h3>2. 評分表與綜合算法</h3>
+<p>四個面向各 10 分，綜合分＝四項的未加權平均：</p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>人像</th>
+<th>全身／場景</th>
+<th>指令保真</th>
+<th>速度</th>
+<th>綜合</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Juggernaut XL v9</td>
+<td>9</td>
+<td>9</td>
+<td>7</td>
+<td>8</td>
+<td>8.25</td>
+</tr>
+<tr>
+<td>SDXL base 1.0</td>
+<td>7</td>
+<td>7</td>
+<td>9</td>
+<td>8</td>
+<td>7.75</td>
+</tr>
+<tr>
+<td>RealVisXL V5.0</td>
+<td>8</td>
+<td>9</td>
+<td>7</td>
+<td>6</td>
+<td>7.5</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>「全身／場景」一格合併 Q2 與 Q3 兩題的表現；「指令保真」一格專指 Q4 的屬性正確度（顏色、物件逐項對不對），Q1 的髮長落差是質性觀察，不併入此分（見第 3 節 N1）。</li>
+<li>速度分拆開看：生成時間三家同級，每張 26–28 秒；差距在載入（含首次下載）——base 104 秒、Juggernaut 109 秒、RealVis 206 秒（模型庫較大）。RealVis 的速度分 6 分，扣的是載入，不是生成。</li>
+</ul>
+<h3>3. 逐題觀察（N）</h3>
+<ul>
+<li>N1 人像（Q1）：Juggernaut 最精緻（妝感、髮絲、眼神到位）；RealVis 膚質最自然、最像真人照片；base 把明寫的肩長髮畫成長髮，服從度在人像題先漏氣——此為質性觀察，指令保真分仍以 Q4 為準。</li>
+<li>N2 全身場景（Q2）：Juggernaut 最有電影感（雨夜霓虹、濕地面反射）；RealVis 最像街頭實拍；三家全身比例與手部都過關。</li>
+<li>N3 純場景（Q3）：三家接近平手，都偏插畫感，金色黃昏的氛圍營造都不差。</li>
+<li>N4 指令保真（Q4）：只有 base 把紫象、條紋帽、紅氣球三項屬性全部答對；Juggernaut 與 RealVis 都把紅氣球改成黃色。另外，三家都沒有用象鼻「拿」住氣球——此為未計分的共同觀察。</li>
+<li>N5 速度：生成 26–28 秒／張三家同級；載入時間差距近兩倍（104／109／206 秒）。把「RealVis 慢」說成生成慢，是讀錯表。</li>
+</ul>
+<h3>4. 選型判定（代碼與優先序）</h3>
+<p>對任一選型情境，依下列優先序取第一個成立的代碼，每個情境只取一個：</p>
+<ol>
+<li>H 暫緩定案：情境明文出現下列任一——(a) 生產將改用社群慣用參數（cfg 5–6＋DPM++ 2M 採樣器），卻要以本輪排名作最終排名；(b) 以速度為決定依據，但執行硬體不是本輪的 T4 等級，或要把本輪速度分推論到其他硬體；(c) 以「RealVis 生成最慢」為淘汰理由（與 N5 實測不符）。本輪證據不足以支撐該定案，須補測或改述後重判。</li>
+<li>B 選 SDXL base 1.0：需求明文要求指定屬性（顏色、物件、數量）逐項精確，任一不符即失敗。base 的指令保真 9 分最高，且是 Q4 唯一全對者。</li>
+<li>R 選 RealVisXL V5.0：需求明文把「膚質最自然、最像真人照片」列為第一準則。依 N1、N2 的質性觀察，此準則下 RealVis 勝出，綜合分不覆蓋此判定。</li>
+<li>J 選 Juggernaut XL v9：其餘情境——人像主導、全身／場景主導、一般用途。Juggernaut 人像 9 分最高；全身／場景與 RealVis 並列 9 分時，以綜合分決勝（8.25＞7.5）；一般用途直接取綜合分最高者。</li>
+</ol>
+<h3>5. 誠實邊界（本輪排名的適用範圍）</h3>
+<ul>
+<li>主場參數未測：本輪用的是統一規格（cfg 7）；Juggernaut 與 RealVis 的社群慣用參數是 cfg 5–6＋DPM++ 2M 採樣器，用它們的主場參數重賽，名次可能翻盤——這是下一輪的主題。</li>
+<li>速度只限本平台：生成與載入數字都在免費 T4 等級環境量得，換硬體必須重測，不准外推。</li>
+<li>單人盲評：評分出自單一評者（看圖不看檔名順序），不是多人評審；分數是編輯判定，不是實驗室量測。</li>
+<li>下一輪預告：兩家社群模型用各自慣用參數重賽同題，新模型加入時第一時間補測。</li>
+</ul>
+<h3>6. 常見錯誤清單</h3>
+<ul>
+<li>只看綜合分選模型：綜合分把四條軸平均掉，你最在乎的那一格可能正是贏家的最低分。</li>
+<li>把載入慢講成生成慢：RealVis 生成與其他兩家同級，慢在載入；單張短工作階段才會被載入拖累，長批次會被攤平。</li>
+<li>拿本輪排名去管主場參數的生產：排名只對統一規格成立，換參數就是另一場比賽。</li>
+<li>以為社群模型比較「聰明」就會比較聽話：本輪證據相反——越會把畫面修好看的模型，越可能擅自改掉你的指定屬性。</li>
+</ul>
+<p>資料日期：2026-11-19（實測於 2026-11-08）。素材來源：PlAIground Lab 模型 Bake-off 評測 R1 素材包（評分、逐題分析與速度原始紀錄），去識別化整理；評分標準全文存於內部評測庫。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
