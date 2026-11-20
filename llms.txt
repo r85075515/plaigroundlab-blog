@@ -2,6 +2,10 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [工人額度快到期卻沒單可接：閒置哨兵與燃料庫（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-20-idle-sentinel-fuel/)
+- [Quota About to Expire, No Work in the Queue: The Idle Sentinel and the Fuel Depot (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-20-idle-sentinel-fuel/)
+- [Agent edition, 中文：2026-11-20-idle-sentinel-fuel](https://blog.plaigroundlab.com/posts/2026-11-20-idle-sentinel-fuel.agent.md)
+- [Agent edition, English: 2026-11-20-idle-sentinel-fuel](https://blog.plaigroundlab.com/posts/2026-11-20-idle-sentinel-fuel.en.agent.md)
 - [畫質贏家最不聽話：三個 SDXL 模型同題實測（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-19-sdxl-bakeoff-r1/)
 - [The Best-Looking Model Was the Least Obedient: Three SDXL Models, Same Prompts, Tested Head-to-Head (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-19-sdxl-bakeoff-r1/)
 - [Agent edition, 中文：2026-11-19-sdxl-bakeoff-r1](https://blog.plaigroundlab.com/posts/2026-11-19-sdxl-bakeoff-r1.agent.md)
