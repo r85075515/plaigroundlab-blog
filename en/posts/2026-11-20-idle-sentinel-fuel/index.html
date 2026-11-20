@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quota About to Expire, No Work in the Queue: The Idle Sentinel and the Fuel Depot — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Quota About to Expire, No Work in the Queue: The Idle Sentinel and the Fuel Depot">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-20-idle-sentinel-fuel/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-20-idle-sentinel-fuel/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-20-idle-sentinel-fuel/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-20-idle-sentinel-fuel/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-20">2026-11-20</time></p>
+    <ul class="post-tags"><li>agent-ops</li><li>cost</li></ul>
+    <h1 class="post-title">Quota About to Expire, No Work in the Queue: The Idle Sentinel and the Fuel Depot</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d15.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-20-idle-sentinel-fuel.en.agent.md">English</a> · <a href="/posts/2026-11-20-idle-sentinel-fuel.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>The most ironic way for free quota to die is not to be used up — it is to be left to expire. Worker quota resets on a cycle, and when the moment arrives, whatever balance is still unused is wiped to zero in full: it does not accumulate, it takes no account of how busy last week was, it simply evaporates, quietly. We have paid this tuition more than once: one window was discovered, eighteen hours before its reset, to still hold nearly thirty percent unused — already too late to fill it properly; another window closed outright carrying more than twenty percent, noticed only afterwards in the ledger. The more common version is quieter still: a list full of shelved real work sits on one side, workers with no work to take sit on the other, and both sides wait together until the counter hits zero.</p>
+<p>Enough losses, and the lessons converge to two. First, <strong>feeding order is earliest-expiry first, not most-remaining first</strong> — a worker with a large balance but a late reset still has time, while a worker with a smaller balance and an imminent reset evaporates first; order by most-remaining and you will reliably rescue the one that was never in danger. Second, watching for this should not depend on anyone's memory, and it should not mean a supervisor opening every worker's quota page by hand each day — that is both forgettable and a waste of the more expensive resource, attention. The right shape is: <strong>a zero-LLM dead script as the sentinel, reading only numbers and judging only against written thresholds, completely silent in normal times, waking the supervisor only when something is genuinely about to go wrong</strong> — and, at the moment the supervisor is woken, a fuel depot that was stocked and verified in advance, ready to grab and feed, with no improvised search for work.</p>
+<p>The second half of this post writes the whole mechanism down hard: the three bands and their boundary values, the verified definitions of fuel, the six disposition codes and their priority order, and the ordering rule for who gets fed first when several workers raise the alarm at once. Anyone — or any AI — handed the state of one window can produce exactly one disposition.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. How the Sentinel Operates</h3>
+<ul>
+<li>Scanning: the dead script periodically reads the quota table for all workers and computes two numbers per worker — R (the percentage remaining) and H (the hours until reset) — and reads the response flag (responsive / silent-dead) from an independent health check. A quota reading must be freshly read in the current round; an unreadable or stale reading is a data failure, never to be treated as "all fine".</li>
+<li>Waking: only when a disposition is needed does the sentinel wake the supervisor, attaching that worker's R, H, flag, and judgement code. When the judgement is no action, it is completely silent — zero notifications.</li>
+<li>Dispatching: the sentinel never dispatches work itself. Before dispatching, the supervisor re-checks the fuel against the verified conditions (Section 3); fuel that fails counts as non-existent, and the judgement is made again.</li>
+<li>Recording and revisiting: every feeding leaves a record (worker, fuel identifier, the R and H at trigger time, the code, a revisit time). At the next scan cycle, check whether that worker's R has started to fall; if it has not, the dispatch did not take effect — escalate again instead of treating it as handled.</li>
+</ul>
+<h3>2. The Three Bands and Their Boundary Values</h3>
+<ul>
+<li>Critical band: H &lt; 24 and R &gt; 30 — less than a day remains and more than thirty percent is still unused; at the current pace it cannot be spent, so feed or escalate immediately.</li>
+<li>Warning band: 24 ≤ H &lt; 48 and R &gt; 30 — one to two days remain; warn the supervisor and stage fuel first, but do not dispatch yet.</li>
+<li>Normal: R ≤ 30 (whatever H is), or H ≥ 48 (whatever R is) — on track, or still early; take no action.</li>
+<li>Boundaries are fixed in writing: R exactly 30 does not count as "&gt; 30"; H exactly 24 belongs to the warning band; H exactly 48 does not belong to the warning band. The thresholds are settled operating values (30%, 24 hours, 48 hours); changing them means amending the specification first, never improvising on the spot.</li>
+</ul>
+<h3>3. The Fuel Depot: What Counts as Fuel</h3>
+<ul>
+<li>Frozen fuel (real work that was shelved) counts as verified only when all four hold: it is real work; at shelving time the original claim was released or transferred, with a status record left behind; a resume note is attached; and its acceptance criteria are complete.</li>
+<li>Evergreen fuel (standing work with no deadline dependency, startable at any time) counts as verified only when all three hold: it was approved in advance as startable at any time; it has no deadline dependency; and its acceptance criteria are written down.</li>
+<li>A draft missing any one item, work that was only ever mentioned verbally, and shelved work whose claim status is unclear all count as non-existent. Before judging, remove the unverified, then look at what the depot actually holds.</li>
+<li>The depot must be stocked and verified during normal times. Start looking for work only once a window is critical, and the window will have reset before the search ends.</li>
+<li>Feeding order (on the fuel side): frozen before evergreen — frozen work is real owed work and rots if left too long; evergreen work has no deadline and stays as the second choice.</li>
+</ul>
+<h3>4. The Six Disposition Codes and Their Priority Order</h3>
+<p>For each window, check in order and take the first code that holds:</p>
+<ol>
+<li>D Escalate for revival: the worker is explicitly marked silent / dead (whatever R and H are). Do not dispatch; escalate to a human to handle revival — work fed to a worker that cannot receive it simply sits there.</li>
+<li>Critical disposition (H &lt; 24 and R &gt; 30, worker responsive): (a) verified frozen fuel is available → F Feed frozen fuel now; (b) no frozen fuel, but verified evergreen fuel is available → E Feed evergreen fuel now; (c) neither is available → S Escalate a fuel shortage. Take the first of sub-items (a), (b), (c) that holds.</li>
+<li>W Warn and stage: 24 ≤ H &lt; 48 and R &gt; 30 (worker responsive). Warn the supervisor, stage fuel in the order of Section 3, and do not dispatch yet.</li>
+<li>N No action: none of the above holds (R ≤ 30, or H ≥ 48, and the worker is responsive). The sentinel stays silent.</li>
+</ol>
+<p>Multi-worker ordering rule (O): when one scan round finds several workers simultaneously qualifying for F or E, feed earliest-expiry first — the smallest H goes first, and when H is equal, the larger R goes first; ordering by most-remaining first is strictly forbidden. This rule decides order only and does not change each worker's own code; a multi-worker disposition must state both the code and the first worker in order. For example, Worker A has R = 80, H = 20 and Worker B has R = 35, H = 6, with frozen fuel enough to feed only one first: both carry code F, and B is fed first — not A, who merely looks like it has more left.</p>
+<h3>5. Honest Limits</h3>
+<ul>
+<li>The specification assumes three premises: fresh quota readings, a trustworthy response flag, and an explicit verification status for the fuel. When one of them fails in reality, fix the data first instead of forcing a judgement.</li>
+<li>The thresholds are an operating choice, not a natural constant: another quota pool may adjust them to its own reset cycle, but the adjustment must be written back into the specification and applied uniformly across the pool — never relaxed ad hoc for a single worker.</li>
+<li>Feeding is not the same as value: the sentinel only guarantees the quota is spent on real work; whether the fuel is worth doing is guarded by the verification conditions and the dispatcher's acceptance, and acceptance always belongs to the dispatcher.</li>
+<li>Revival is not the sentinel's job: a silent or dead worker is usually stuck on a sign-in or permission step that needs a human; the sentinel can only escalate, never act in the human's place — and while escalation is left undone, the window still counts down to zero.</li>
+</ul>
+<h3>6. Common Mistakes Checklist</h3>
+<ul>
+<li>Feeding by most-remaining first: a large balance is not the same as urgency; the worker whose reset arrives first evaporates first, and a reversed order reliably rescues the one that was never in danger.</li>
+<li>Looking for fuel only once things are critical: verifying fuel (claim status, resume note, acceptance criteria) takes time, and the critical band leaves less than a day — the search ends at the reset.</li>
+<li>Counting unverified drafts as depot stock: fuel that exists on paper but cannot actually be fed is the most dangerous kind of false water level; skip the removal step and the depot turns out to be empty exactly when it is critical.</li>
+<li>Feeding a worker that has already gone silent: a successful dispatch is not the same as anyone receiving the work; a dead worker is escalated for revival first, and feeding comes after revival.</li>
+<li>Letting the sentinel also dispatch and judge: the moment a sentinel starts making judgements and dispatching work, it is no longer a dead script — the cost, the failure surface, and the misjudgement risk all come back. The sentinel reads numbers and wakes people; disposition belongs to the supervisor.</li>
+</ul>
+<p>Data date: 2026-11-20. Sources: PlAIground Lab's own worker-fleet dispatch and quota-sentinel operating records (the earliest-expiry-first principle and the idle-sentinel design, from 2026-11-06), de-identified.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
