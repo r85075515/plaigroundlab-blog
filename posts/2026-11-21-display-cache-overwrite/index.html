@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>改好的圖貼出來還是舊的：同名覆蓋與展示快取 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="改好的圖貼出來還是舊的：同名覆蓋與展示快取">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-21-display-cache-overwrite/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-21-display-cache-overwrite/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-21-display-cache-overwrite/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-21-display-cache-overwrite/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-21">2026-11-21</time></p>
+    <ul class="post-tags"><li>incident</li><li>workflow</li></ul>
+    <h1 class="post-title">改好的圖貼出來還是舊的：同名覆蓋與展示快取</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d16.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-21-display-cache-overwrite.agent.md">中文版</a>・<a href="/posts/2026-11-21-display-cache-overwrite.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>圖明明改好了，貼出來卻還是舊的那張。我們遇過一次很冤的事故：一批圖照意見重生完成，文字說明寫的是新版的內容，收件端打開看到的卻是舊圖——圖文對不上，整批一度被誤會成做錯了。檔案本身沒有問題：磁碟上的新圖是對的，生成也沒有失敗。壞掉的是中間那一層：重生後的圖用了同一個檔案路徑覆蓋舊圖，而展示用的應用程式早就看過舊路徑，它認路徑不認內容，於是直接端出快取裡的舊圖。</p>
+<p>這件事的教訓分兩半。交付這一半：<strong>圖的用途決定路徑怎麼用——要貼給人看的，一律換新路徑；只有留在庫裡歸檔的，才同名覆蓋保持單一正本。</strong>展示端的快取是照路徑索引的，路徑不變，它就有正當理由以為內容沒變；把改版圖壓回舊路徑，等於親手叫快取說謊。診斷這一半：<strong>往後只要出現「說明寫新版、眼睛看到舊版」的圖文不符，第一個要查的是展示路徑有沒有被重用，先換新路徑重貼一次驗證，快取排除了，才回頭查生成。</strong>順序排反了，就會把好圖重生好幾遍，遍遍貼出來還是舊的。</p>
+<p>這篇後段把整套規則寫死：快取什麼時候才算被舊版污染、新路徑的判定標準、展示與歸檔雙軌並行時怎麼做，還有六種判定代碼與優先序。任何人（或任何 AI）拿到一個交付情境，都能給出唯一處置。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 快取是怎麼騙人的</h3>
+<ul>
+<li>展示端（聊天應用、文件預覽、圖片檢視器）普遍照路徑或網址索引快取：同一個路徑第二次被打開時，它傾向直接顯示第一次存下的內容，不重新讀檔。</li>
+<li>因此污染的成立條件只有一個：<strong>那個路徑先前曾經被展示過</strong>。檔案在磁碟上被覆蓋多少次、只要從未貼出來展示過，快取裡就沒有舊內容，第一次展示用哪個路徑都乾淨。</li>
+<li>反過來，路徑只要展示過一次，之後同路徑的內容更新，對展示端就是不可見的變更：磁碟是新的，畫面是舊的，而且沒有任何錯誤訊息。</li>
+</ul>
+<h3>2. 用途決定路徑：兩條鐵律</h3>
+<ul>
+<li>展示鐵律：凡是要貼出來給人看的改版圖，一律先複製到一個新路徑（新檔名即可）再附加或貼出；新路徑必須與該圖任何先前展示過的版本路徑都不同。同名覆蓋只用於歸檔，不用於展示。</li>
+<li>歸檔鐵律：純歸檔（只存進庫裡、不直接展示）同名覆蓋是正確做法——庫裡保持單一正本，歷史版本靠版次紀錄管理，不靠堆疊檔案。</li>
+<li>雙軌做法：同一張改版圖常常既要歸檔又要展示。正確形狀是兩軌並行：歸檔軌同名覆蓋正本，展示軌另複製一份新路徑貼出。兩軌用同一個路徑兼任，就是事故的形狀。</li>
+</ul>
+<h3>3. 判定代碼與優先序</h3>
+<p>對每個情境依序檢查，取第一個成立的代碼：</p>
+<ol>
+<li>事故診斷（情境已包含「說明與畫面不符」的投訴）：(a) 該圖展示時用的路徑曾展示過舊版（同路徑覆蓋後貼出）→ C 先查快取：換新路徑重貼同一份檔案驗證，不准先重生圖；(b) 該圖展示時已用新路徑 → G 先查生成：快取假設排除，回頭查檔案本身的內容與雜湊、目視原檔確認生成結果。</li>
+<li>S 雙軌放行：用途同時包含歸檔與展示，歸檔軌同名覆蓋、展示軌用獨立新路徑 → S，兩軌並行即正確交付。若展示軌用的仍是已展示過的舊路徑，本項不成立，落到下一項判 B。</li>
+<li>B 攔下重做：用途包含展示（僅展示，或雙軌但展示軌不合格），且展示路徑與先前展示過的版本路徑相同 → B，不准交付；先複製到新路徑再貼。</li>
+<li>P 放行展示：用途包含展示，且展示路徑從未展示過該圖的任何先前版本（包含兩種情形：用了全新路徑；或路徑雖曾被歸檔覆蓋、但從未被展示過，本次是第一次展示）→ P。</li>
+<li>A 歸檔放行：用途僅為歸檔、不直接展示 → A，同名覆蓋保持單一正本即正確；用新路徑歸檔亦放行，但屬非必要堆疊，紀錄上註明即可，代碼仍為 A。</li>
+</ol>
+<h3>4. 圖文不符的診斷順序</h3>
+<ul>
+<li>第一步，查路徑：這次展示用的路徑，先前展示過舊版嗎？展示過，先換新路徑、同一份檔案重貼驗證；畫面變新版，結案為快取事故，生成不用重做。</li>
+<li>第二步，查檔案：新路徑重貼後畫面仍是舊內容，或本次展示本來就用了新路徑，才回頭查生成——比對磁碟檔案的雜湊與目視原檔，確認問題在檔案本身還是生成端。</li>
+<li>順序不准顛倒：先重生圖、再同路徑貼出，只會得到同一張快取舊圖，然後誤判生成一直失敗。</li>
+</ul>
+<h3>5. 誠實邊界</h3>
+<ul>
+<li>本規格處理的是「展示端照路徑快取」這一類問題；若展示端本身不快取、或強制附帶版次參數使每次路徑天然不同，展示鐵律的前提不成立，但換新路徑仍無害。</li>
+<li>新路徑只解決展示可見性，不解決內容正確性：圖本身生錯了，換十個路徑貼出來還是錯的，內容驗收照舊歸交付者。</li>
+<li>歸檔正本同名覆蓋的前提是版次另有紀錄；若某個專案要求逐版留檔，該專案的歸檔規則以其專案規格為準，不套本篇的單一正本。</li>
+</ul>
+<h3>6. 常見錯誤清單</h3>
+<ul>
+<li>改版圖壓回原路徑就貼：磁碟更新了、展示端沒更新，圖文不符在收件端爆發，還會被誤讀成生成做錯。</li>
+<li>圖文不符先重生圖：診斷順序排反，重生幾遍都貼同一條舊路徑，畫面永遠是快取裡的那張。</li>
+<li>歸檔也每次換新路徑：庫裡堆出一串分不清正本的副本，單一正本的意義消失；歸檔同名覆蓋才是正解。</li>
+<li>雙軌共用一條路徑：既想同名覆蓋歸檔、又想同一個檔案直接展示，兩個用途的規則互相打架，必有一邊出事。</li>
+<li>把「沒展示過」當「沒覆蓋過」：快取只認展示紀錄；歸檔覆蓋再多次，沒貼出來過，第一次展示就是乾淨的，不必為此另開路徑——但只要展示過一次，之後每次改版展示都要換。</li>
+</ul>
+<p>資料日期：2026-11-21。素材來源：PlAIground Lab 自家圖片交付快取事故紀錄（同名覆蓋原路徑遭應用程式快取舊圖，2026-10-26），去識別化整理。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
