@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Revised Image Still Shows the Old One: Same-Name Overwrites and the Display Cache — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="The Revised Image Still Shows the Old One: Same-Name Overwrites and the Display Cache">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-21-display-cache-overwrite/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-21-display-cache-overwrite/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-21-display-cache-overwrite/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-21-display-cache-overwrite/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-21">2026-11-21</time></p>
+    <ul class="post-tags"><li>incident</li><li>workflow</li></ul>
+    <h1 class="post-title">The Revised Image Still Shows the Old One: Same-Name Overwrites and the Display Cache</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d16.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-21-display-cache-overwrite.en.agent.md">English</a> · <a href="/posts/2026-11-21-display-cache-overwrite.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>The image really had been fixed — yet what got posted still showed the old one. We lived through one deeply unfair incident of this kind: a batch of images was regenerated exactly as requested, the accompanying text described the new version, and the receiving end opened it to find the old image staring back. Text and image did not match, and for a while the whole batch was taken for botched work. The file itself was fine: the new image on disk was correct, and nothing had failed in generation. What broke was the layer in between — the regenerated image had overwritten the old one at the very same file path, and the display app had already seen that path before. It indexes by path, not by content, so it simply served the old image out of its cache.</p>
+<p>The lesson splits in two. On the delivery side: <strong>what an image is for decides how its path may be used — anything meant to be shown to a person gets a new path, every time; only what stays in the archive may be overwritten under the same name to keep a single canonical copy.</strong> A display cache is indexed by path; leave the path unchanged and it has every reason to believe the content is unchanged too. Pressing a revision back into the old path is, in effect, instructing the cache to lie. On the diagnosis side: <strong>from now on, whenever text and image disagree — the description says new, the eyes see old — the first thing to check is whether the display path was reused. Re-post the same file under a new path and verify; only once the cache is ruled out do you go back and check generation.</strong> Reverse that order and you will regenerate a perfectly good image over and over, and every single repost will still show the old one.</p>
+<p>The second half of this post writes the whole rule set down hard: when a cache counts as contaminated by an old version, what qualifies as a new path, how to run display and archive as two parallel tracks, and the six judgement codes with their priority order. Anyone — or any AI — handed a delivery scenario can produce exactly one disposition.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. How the Cache Lies</h3>
+<ul>
+<li>Display surfaces (chat apps, document previews, image viewers) generally index their cache by path or URL: when the same path is opened a second time, they tend to show the content stored from the first time instead of re-reading the file.</li>
+<li>Contamination therefore has exactly one condition: <strong>that path was displayed before</strong>. No matter how many times a file was overwritten on disk, if it was never posted for display, the cache holds no old content, and a first display is clean at any path.</li>
+<li>Conversely, once a path has been displayed even once, every later content update at that path is an invisible change to the display surface: the disk is new, the screen is old, and no error message appears anywhere.</li>
+</ul>
+<h3>2. Purpose Decides the Path: Two Iron Rules</h3>
+<ul>
+<li>The display rule: any revised image meant to be shown to a person is first copied to a new path (a new filename is enough) and only then attached or posted; the new path must differ from the path of every previously displayed version of that image. Same-name overwrites are for the archive, never for display.</li>
+<li>The archive rule: a pure archive write (stored in the library, not directly displayed) is correctly done as a same-name overwrite — the library keeps a single canonical copy, and history is managed through version records, not through piles of files.</li>
+<li>The dual-track shape: one revised image very often has to be both archived and displayed. The correct shape runs both tracks in parallel: the archive track overwrites the canonical copy under the same name, and the display track posts a separate copy under a new path. Forcing one path to serve both tracks is exactly the shape of the incident.</li>
+</ul>
+<h3>3. Judgement Codes and Their Priority Order</h3>
+<p>For each scenario, check in order and take the first code that holds:</p>
+<ol>
+<li>Incident diagnosis (the scenario already contains a "text and image do not match" complaint): (a) the path used for this display had previously displayed an old version (posted after a same-path overwrite) → C Check the cache first: re-post the same file under a new path and verify; do not regenerate first. (b) this display already used a new path → G Check generation first: the cache hypothesis is ruled out; go back and check the file itself — its content and hash — and view the original file to confirm the generation result.</li>
+<li>S Dual-track pass: the purpose includes both archiving and display, the archive track overwrites under the same name, and the display track uses an independent new path → S; running both tracks in parallel is the correct delivery. If the display track still uses a previously displayed old path, this item does not hold and the scenario falls through to B below.</li>
+<li>B Block and redo: the purpose includes display (display only, or dual-track with a failing display track), and the display path is identical to a previously displayed version's path → B; do not deliver — copy to a new path first, then post.</li>
+<li>P Display pass: the purpose includes display, and the display path has never displayed any previous version of that image (covering both cases: a brand-new path was used; or the path was overwritten in the archive before but never displayed, and this is its first display) → P.</li>
+<li>A Archive pass: the purpose is archive only, with no direct display → A; a same-name overwrite keeping a single canonical copy is correct. Archiving under a new path also passes but is unnecessary stacking — note it in the record; the code remains A.</li>
+</ol>
+<h3>4. The Diagnosis Order for a Text–Image Mismatch</h3>
+<ul>
+<li>Step one, check the path: was the path used for this display previously used to display an old version? If yes, re-post the same file under a new path and verify; if the screen now shows the new version, close the case as a cache incident — generation does not need to be redone.</li>
+<li>Step two, check the file: only if the new-path repost still shows the old content, or if this display used a new path in the first place, go back and check generation — compare the on-disk file's hash and view the original file, and confirm whether the problem sits in the file itself or at the generation end.</li>
+<li>The order must not be reversed: regenerate first and repost at the same path, and you will get the same cached old image again — then misjudge generation as failing forever.</li>
+</ul>
+<h3>5. Honest Limits</h3>
+<ul>
+<li>This specification covers the class of problems where the display surface caches by path. If a display surface does not cache at all, or always attaches a version parameter that makes every link naturally distinct, the premise of the display rule does not hold — though using a new path remains harmless.</li>
+<li>A new path fixes display visibility, not content correctness: an image that was generated wrong is still wrong under ten new paths, and content acceptance always belongs to the deliverer.</li>
+<li>The single-canonical-copy archive rule presumes versions are recorded elsewhere; where a project requires keeping every version as a file, that project's archive rule wins over this post's single-copy default.</li>
+</ul>
+<h3>6. Common Mistakes Checklist</h3>
+<ul>
+<li>Pressing the revision back into the original path and posting it: the disk updated, the display surface did not, the mismatch erupts at the receiving end — and gets misread as generation having done it wrong.</li>
+<li>Regenerating first when text and image disagree: the diagnosis order is reversed; regenerate as many times as you like and post at the same old path, and the screen will forever show the cached one.</li>
+<li>Giving the archive a new path every time: the library fills with copies nobody can tell apart from the canonical one, and the point of a single canonical copy disappears; same-name overwrite is the correct answer for the archive.</li>
+<li>Running both tracks on one path: wanting the same-name overwrite for the archive and the very same file for display makes the two purposes' rules collide, and one side is guaranteed to break.</li>
+<li>Confusing "never displayed" with "never overwritten": the cache only knows display history. Overwrite a file in the archive as often as you like — if it was never posted, its first display is clean and needs no new path for that reason alone; but once it has been displayed even once, every later revised display needs a fresh path.</li>
+</ul>
+<p>Data date: 2026-11-21. Sources: PlAIground Lab's own image-delivery cache incident records (a same-name overwrite at the original path served from an application's cache of the old image, 2026-10-26), de-identified.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
