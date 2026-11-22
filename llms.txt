@@ -2,6 +2,10 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [驗證全過、授權還是被擋：平台串接的最後一哩（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-22-integration-last-mile/)
+- [Every Check Passed, Authorization Still Blocked: The Last Mile of a Platform Integration (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-22-integration-last-mile/)
+- [Agent edition, 中文：2026-11-22-integration-last-mile](https://blog.plaigroundlab.com/posts/2026-11-22-integration-last-mile.agent.md)
+- [Agent edition, English: 2026-11-22-integration-last-mile](https://blog.plaigroundlab.com/posts/2026-11-22-integration-last-mile.en.agent.md)
 - [改好的圖貼出來還是舊的：同名覆蓋與展示快取（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-21-display-cache-overwrite/)
 - [The Revised Image Still Shows the Old One: Same-Name Overwrites and the Display Cache (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-21-display-cache-overwrite/)
 - [Agent edition, 中文：2026-11-21-display-cache-overwrite](https://blog.plaigroundlab.com/posts/2026-11-21-display-cache-overwrite.agent.md)
