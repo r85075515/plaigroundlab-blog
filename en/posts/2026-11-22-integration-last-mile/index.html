@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Every Check Passed, Authorization Still Blocked: The Last Mile of a Platform Integration — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Every Check Passed, Authorization Still Blocked: The Last Mile of a Platform Integration">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-22-integration-last-mile/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-22-integration-last-mile/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-22-integration-last-mile/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-22-integration-last-mile/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-22">2026-11-22</time></p>
+    <ul class="post-tags"><li>incident</li><li>workflow</li></ul>
+    <h1 class="post-title">Every Check Passed, Authorization Still Blocked: The Last Mile of a Platform Integration</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d17.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-22-integration-last-mile.en.agent.md">English</a> · <a href="/posts/2026-11-22-integration-last-mile.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>Open the account dashboard and every cell is green: identity verification complete, tax information complete, phone verification complete, and the pending-items list is empty. By all logic, the integration authorization that comes next should pass in one click. Instead, halfway through the authorization flow, the same sentence appears again: please complete your business verification first. It names no missing item, offers nothing to supply, and when you go back to the dashboard to check, the pending list is still zero.</p>
+<p>This is the most tormenting shape an integration can get stuck in: not something you failed to submit, but two gates that are not the same gate. <strong>Account verification is the gate inside the platform dashboard; integration authorization is the gate the connector meets on its way in. Passing the first gate in full proves the dashboard record is complete — it does not guarantee that the second gate's judgement logic will release you in sync.</strong> When the second gate offers only a generic sentence and cannot name any missing item, the problem is in most cases no longer on the user's side: resubmitting verification as diligently as you like will not conjure up one more item to supply.</p>
+<p>The settled disposition in this post has three parts. Diagnosis: <strong>go back to the dashboard and check every verification item in place first — never conclude anything from the authorization flow's error message alone — then reproduce the authorization once and record whether the prompt is a generic sentence or names a specific item.</strong> Verdict: <strong>if the dashboard is fully passed with zero pending items, the authorization is blocked by a generic prompt only, and a reproduction gives the same result, judge it a platform-layer defect and stop looping.</strong> Fallback: <strong>after the defect report is filed, the work does not stop and wait for the platform to fix it; real figures that can be read manually from the platform dashboard are read manually for now, and every downstream place that uses those figures is honestly labelled "not obtained through a verified integration — read manually", with no claim anywhere that the integration works.</strong></p>
+<p>The second half writes the whole judgement down hard: six disposition codes with their priority order, which step genuinely requires the account owner in person, and why "delete the account and rebuild it to try your luck" is always the blocked option. Anyone — or any AI — handed an integration-stuck scenario can produce exactly one disposition, with no guessing.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Two Gates: Verification and Authorization Are Not the Same Thing</h3>
+<ul>
+<li>The account verification layer: identity, tax, phone, and business information managed inside the platform dashboard. Every item has an explicit status, and a missing item appears in the pending list, naming exactly what you must supply.</li>
+<li>The integration authorization layer: the judgement a third-party connector or authorization flow makes when establishing a connection. It reads state on another side of the platform, and its prompts are often a single generic sentence with no itemised detail attached.</li>
+<li>The two layers can disagree: a fully passed dashboard does not mean the authorization layer's judgement has synchronised, and an authorization layer saying "verification incomplete" does not mean the dashboard really has a gap. Which layer decides depends on where the evidence lives: missing-item evidence is governed by the dashboard pending list, and whether an integration works is governed by actually completing one real data read.</li>
+</ul>
+<h3>2. Diagnosis Order: Check the Dashboard First, Then Reproduce Once</h3>
+<ul>
+<li>Step one, check the dashboard item by item in place: identity, tax, phone, and business information, one status at a time, and whether the pending list is truly zero. Reading only the sentence the authorization flow popped up does not count as having checked.</li>
+<li>Step two, reproduce the authorization exactly once: walk the authorization flow through in full and record the prompt word for word. If the prompt names a specific missing item, there is still something to supply and the case returns to the remedy path; only if the prompt is a generic sentence naming nothing does the case move to a defect judgement.</li>
+<li>Step three, compare the two sides: a pending item in the dashboard puts the problem on the user's side; zero pending items in the dashboard with a generic prompt blocking authorization puts it on the platform's side. When the two sides' evidence does not line up, "just try it a few more times" is not an acceptable substitute for a judgement.</li>
+</ul>
+<h3>3. Judgement Codes and Their Priority Order</h3>
+<p>For each scenario, check in order and take the first code that holds:</p>
+<ol>
+<li>E Escalate to the owner: the scenario contains an explicit pending item, and that item can by law or platform rule be completed only by the account owner in person (for example, the owner's own identity authentication is not yet complete) → E; hand only that step to the owner, and no other step.</li>
+<li>R Remedy and continue: the dashboard holds an explicit pending item, or the authorization prompt names a specific missing item, and that item is not of the owner-only kind → R; supply that item, then walk the authorization again.</li>
+<li>P Integration pass: the dashboard is fully passed, the authorization has actually gone through, and one real data read has been completed as verification → P; the integration may be claimed to work. Seeing only a success screen in the authorization flow, with no real read, does not qualify.</li>
+<li>L Loop blocked: the scenario has already been judged a platform defect (or the fallback is already active), and the proposed action is to resubmit verification, delete and rebuild the account, or repeatedly ask the owner to re-authenticate, with no evidence of any new missing item → L; block it, do not do it.</li>
+<li>F Fallback manual read: the dashboard is fully passed with zero pending items, the authorization is blocked by a generic prompt with the same result on reproduction, and the platform dashboard itself offers a usable manual-read path to the real data → F; file the defect report and activate the manual-read fallback at the same time; label downstream use "not obtained through a verified integration — read manually".</li>
+<li>D Defect verdict only: the dashboard is fully passed with zero pending items, the authorization is blocked by a generic prompt with the same result on reproduction, and no usable alternative read path exists → D; file the defect report, label any downstream need for figures as unverified, fabricate no figures, and wait for the platform fix.</li>
+</ol>
+<h3>4. The Honest Label on the Fallback</h3>
+<ul>
+<li>The fallback is a manual read, not an integration: figures obtained manually are real, but the way they were obtained did not pass through integration authorization. Any report, settlement, or downstream document using those figures must state that the source is a manual read and the integration status is not connected.</li>
+<li>A defect report needs evidence attached: the item-by-item verification status from the dashboard, the record showing zero pending items, the exact wording of the authorization prompt, and the time of reproduction. Miss any one of these and platform support will simply tell you to go and complete your verification.</li>
+<li>The fallback is not a permanent verdict: once the platform fixes the defect, walk the authorization once more and verify with a real read; only after that passes may the label be changed back to integration-obtained. Until then, the label must not be upgraded early.</li>
+</ul>
+<h3>5. Honest Limits</h3>
+<ul>
+<li>This specification covers the class of inconsistency where the dashboard is fully passed and a generic authorization prompt blocks the way. If the dashboard genuinely holds a pending item, or the authorization prompt names a specific item, that is an ordinary remedy flow and the defect judgement does not apply.</li>
+<li>A manual read presumes the manual-read path itself is legitimate and the account is entitled to use it; data that can only be read by circumventing platform rules is not a fallback.</li>
+<li>Owner-only steps are only those few steps that law or the platform explicitly requires the owner to complete in person. Handing ordinary remedy items to the owner, or having an agent perform an owner step on their behalf, are both violations.</li>
+</ul>
+<h3>6. Common Mistakes Checklist</h3>
+<ul>
+<li>Reporting "verification incomplete" from the authorization error message alone: without checking the dashboard item by item in place, the conclusion can be the exact opposite of the dashboard facts.</li>
+<li>Resubmitting verification the moment authorization blocks: with zero pending items in the dashboard, resubmitting creates no new item to supply — it only gets you blocked at the same place one more time.</li>
+<li>Deleting the account and rebuilding it to try your luck: once a fully verified account is deleted, its verification record and history vanish with it, and if the defect sits on the platform side, the new account will be blocked in exactly the same way.</li>
+<li>Using manually read figures without labelling the source: downstream readers assume the integration already works, and every later reconciliation reconciles against the wrong layer.</li>
+<li>Claiming the integration works because the authorization flow showed a success screen: without one completed real read as verification, a success screen may mean only that the flow ran to its end, not that the connection is usable.</li>
+</ul>
+<p>Data date: 2026-11-22. Sources: PlAIground Lab's own third-party platform integration troubleshooting records (account identity, tax, and phone verification all complete, integration authorization still blocked by a generic verification prompt; fallback settled 2026-11-12), de-identified; no platform is named.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
