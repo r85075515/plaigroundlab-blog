@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>驗證全過、授權還是被擋：平台串接的最後一哩 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="驗證全過、授權還是被擋：平台串接的最後一哩">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-22-integration-last-mile/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-22-integration-last-mile/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-22-integration-last-mile/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-22-integration-last-mile/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-22">2026-11-22</time></p>
+    <ul class="post-tags"><li>incident</li><li>workflow</li></ul>
+    <h1 class="post-title">驗證全過、授權還是被擋：平台串接的最後一哩</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d17.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-22-integration-last-mile.agent.md">中文版</a>・<a href="/posts/2026-11-22-integration-last-mile.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>帳號後台打開來，每一格都是綠的：身分驗證完成、稅務資訊完成、電話驗證完成、待辦清單是空的。照理說，下一步的串接授權應該一按就過。結果授權流程走到一半，跳出來的還是同一句話：請先完成商家驗證。沒有指名缺哪一項，沒有給任何可以補的東西，回到後台檢查，待辦依然是零。</p>
+<p>這是串接工作最折磨人的一種卡關：不是你少交了什麼，而是兩道門不是同一道門。<strong>帳號驗證是平台後台裡的那道門，串接授權是連接器進門時的那道門；第一道門全過，只證明後台紀錄完整，不保證第二道門的判定邏輯會同步放行。</strong>當第二道門只給一句通用提示、卻指不出任何缺項時，問題多半已經不在使用者這一側：再認真重送一次驗證，也不會多出一項可以補的資料。</p>
+<p>這篇的定版處置分三段。診斷：<strong>先回後台逐項實查驗證狀態，不准只看授權流程給的錯誤訊息下結論；再把授權重現一次，確認提示是通用句還是能指名缺項。</strong>定版：<strong>後台全過、待辦為零、授權卻只給通用句阻擋，而且重現結果相同，就判為平台層缺陷，不再迴圈重試。</strong>後路：<strong>缺陷回報送出之後，工作不能停擺等平台修好；能從平台後台手讀的真實數字就先手讀，下游每一處用到這些數字的地方，都誠實標示「未經串接驗證、手讀取得」，絕不宣稱串接已經打通。</strong></p>
+<p>後段把整套判定寫死：六種處置代碼與優先序、哪一步才真的需要本人出面、以及為什麼「刪掉重建帳號試試看」永遠是被攔下的那個選項。任何人（或任何 AI）拿到一個串接卡關情境，都能給出唯一處置，不靠猜。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 兩道門：驗證與授權是兩回事</h3>
+<ul>
+<li>帳號驗證層：平台後台管理的身分、稅務、電話與商家資訊，每一項有明確狀態，缺項會出現在待辦清單裡，指名要你補什麼。</li>
+<li>串接授權層：第三方連接器或授權流程在建立連線時做的判定，它讀的是平台另一側的狀態，給的提示常常只有一句通用句，不附缺項明細。</li>
+<li>兩層不一致是可能的：後台全過，不代表授權層的判定已經同步；授權層說「未完成驗證」，也不代表後台真的有缺項。哪一層說了算，要看證據在哪一層：缺項證據以後台待辦清單為準，授權是否打通以實際完成一次真實讀取為準。</li>
+</ul>
+<h3>2. 診斷順序：先查後台，再重現一次</h3>
+<ul>
+<li>第一步，回後台逐項實查：身分、稅務、電話、商家資訊逐項看狀態，待辦清單是不是真的為零。只看授權流程跳出的那句話，不算查過。</li>
+<li>第二步，重現授權一次就好：把授權流程完整走一次，逐字記下提示內容。提示能指名缺項，代表還有可以補的東西，回到補件路徑；提示只有通用句、指不出任何缺項，才進入缺陷判定。</li>
+<li>第三步，對照兩邊：後台有待辦，問題在使用者這一側；後台零待辦而授權通用句阻擋，問題在平台這一側。兩邊證據對不起來時，不准用「再試幾次看看」來代替判定。</li>
+</ul>
+<h3>3. 判定代碼與優先序</h3>
+<p>對每個情境依序檢查，取第一個成立的代碼：</p>
+<ol>
+<li>E 升級本人：情境中有明文待辦，而且該待辦依法規或平台規則只能由帳號本人完成（例如本人身分認證尚未完成）→ E，只把這一步交給本人，其餘步驟不丟給本人。</li>
+<li>R 補件續行：後台有明確待辦或授權提示能指名缺項，而且該缺項不是只能本人完成的那一類 → R，補齊該項後重走授權。</li>
+<li>P 串接放行：後台全過，而且授權已實際走通，並完成一次真實資料讀取驗證 → P，可以宣稱串接打通。只看到授權畫面顯示成功、沒有真實讀取，不成立。</li>
+<li>L 迴圈攔下：情境已經定版為平台缺陷（或已啟用後路），而提議的動作是重送驗證、刪帳號重建、或反覆要求本人重新認證，且沒有任何新缺項證據 → L，攔下不做。</li>
+<li>F 後路手讀：後台全過、待辦為零，授權被通用句阻擋且重現結果相同，而且平台後台本身有可用的手讀路徑能取得真實資料 → F，送出缺陷回報，同時啟用手讀後路；下游標示「未經串接驗證、手讀取得」。</li>
+<li>D 缺陷定版：後台全過、待辦為零，授權被通用句阻擋且重現結果相同，而且沒有任何可用的替代讀取路徑 → D，送出缺陷回報，下游需要數字時標示未驗證、不編造數字，等平台修復。</li>
+</ol>
+<h3>4. 後路的誠實標籤</h3>
+<ul>
+<li>後路是手讀，不是串接：手讀取得的數字是真的，但取得方式沒有經過串接授權；任何報表、結算或下游文件用到這些數字，都要標明來源是手讀、串接狀態是未打通。</li>
+<li>缺陷回報要附證據：後台逐項驗證狀態、待辦為零的紀錄、授權提示的逐字內容與重現時間，缺一項，平台客服就只會叫你再去完成驗證。</li>
+<li>後路不是永久定版：平台修復後要重走一次授權並做真實讀取驗證，通過了才把標籤改回串接取得；在那之前，標籤不准先行升級。</li>
+</ul>
+<h3>5. 誠實邊界</h3>
+<ul>
+<li>本規格處理的是「後台全過、授權通用句阻擋」這一類不一致；若後台真的有待辦，或授權提示能指名缺項，那是一般的補件流程，不套缺陷判定。</li>
+<li>手讀的前提是手讀路徑本身合法且帳號有權限使用；需要繞過平台規則才能讀到的資料，不屬於後路。</li>
+<li>本人專屬步驟只有法規或平台明文要求本人完成的那幾步；把一般補件也丟給本人，或把本人步驟叫代理人代做，兩種都違規。</li>
+</ul>
+<h3>6. 常見錯誤清單</h3>
+<ul>
+<li>只看授權錯誤訊息就回報「驗證未完成」：沒有回後台逐項實查，結論可能與後台事實完全相反。</li>
+<li>一被擋就重送驗證：後台待辦為零時，重送不會產生新缺項，只會在同一個地方再被擋一次。</li>
+<li>刪帳號重建試運氣：已驗證完成的帳號一旦刪除，驗證紀錄與歷史一起消失，而且缺陷若在平台側，新帳號一樣會被擋。</li>
+<li>手讀數字不標來源：下游以為串接已經打通，之後所有對帳都會對錯層級的東西。</li>
+<li>授權畫面顯示成功就宣稱打通：沒有完成一次真實讀取驗證，成功畫面可能只是流程走完，不是連線可用。</li>
+</ul>
+<p>資料日期：2026-11-22。素材來源：PlAIground Lab 自家第三方平台串接排障紀錄（帳號身分、稅務、電話驗證全數完成，串接授權仍被通用驗證提示阻擋，2026-11-12 定版後路），去識別化整理，未指名任何平台。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
