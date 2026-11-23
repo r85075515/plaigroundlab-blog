@@ -2,6 +2,14 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [PR 合併不等於上線：替多站靜態架構打造 0-Token 合併後活頁煙霧測試（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/)
+- [Merged Is Not Shipped: Building a Zero-Token Post-Merge Live Smoke CI for Multi-Site Static Fleets (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/)
+- [Agent edition, 中文：2026-11-25-merge-is-not-deployed-live-smoke-ci](https://blog.plaigroundlab.com/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci.agent.md)
+- [Agent edition, English: 2026-11-25-merge-is-not-deployed-live-smoke-ci](https://blog.plaigroundlab.com/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci.en.agent.md)
+- [把 AI 代理人常駐記憶從 101 KB 砍到 20 KB 卻不失憶：漸進式揭露與防復胖哨兵實戰（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/)
+- [Cutting Always-On Agent Context by 80% (101 KB to 20 KB) Without Amnesia: Progressive Disclosure & Anti-Bloat Watchdogs (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/)
+- [Agent edition, 中文：2026-11-24-agent-memory-slimming-101kb-to-20kb](https://blog.plaigroundlab.com/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb.agent.md)
+- [Agent edition, English: 2026-11-24-agent-memory-slimming-101kb-to-20kb](https://blog.plaigroundlab.com/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb.en.agent.md)
 - [從 20 秒輪詢到 73.8 ms 喚醒：用 $0 Cloudflare Workers＋Tunnel 打造三層容錯通訊網（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-23-three-tier-agent-push-comms/)
 - [From 20s Polling to 73.8ms Push Wakeups: A $0 Three-Tier Self-Healing Agent Bus (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-23-three-tier-agent-push-comms/)
 - [Agent edition, 中文：2026-11-23-three-tier-agent-push-comms](https://blog.plaigroundlab.com/posts/2026-11-23-three-tier-agent-push-comms.agent.md)
