@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PR 合併不等於上線：替多站靜態架構打造 0-Token 合併後活頁煙霧測試 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="原始碼 repo 早就合併 PR，正式網域打開卻還是 HTTP 404 或 000？看我們如何拆解多倉庫靜態部署的 3 種靜默斷鏈陷阱，並用零外部依賴 Python 腳本與自動 publish CI 徹底收口。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="PlAIground Lab">
+<meta property="og:title" content="PR 合併不等於上線：0-Token 多站活頁煙霧測試實戰">
+<meta property="og:description" content="抓出 404 與 000 活頁斷鏈的真實數據表、push paths 自動建置 workflow、零依賴 Python Smoke 腳本與 3 個真實地雷。">
+<meta property="og:url" content="https://blog.plaigroundlab.com/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/">
+<meta property="og:image" content="https://blog.plaigroundlab.com/assets/covers/cover-v2-live-smoke-ci.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PR 合併不等於上線：0-Token 多站活頁煙霧測試實戰">
+<meta name="twitter:image" content="https://blog.plaigroundlab.com/assets/covers/cover-v2-live-smoke-ci.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "PR 合併不等於上線：替多站靜態架構打造 0-Token 合併後活頁煙霧測試",
+  "datePublished": "2026-11-25",
+  "inLanguage": "zh-Hant",
+  "image": "https://blog.plaigroundlab.com/assets/covers/cover-v2-live-smoke-ci.png",
+  "url": "https://blog.plaigroundlab.com/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/",
+  "publisher": {
+    "@type": "Organization",
+    "name": "PlAIground Lab",
+    "url": "https://plaigroundlab.com/"
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-25">2026-11-25</time></p>
+    <ul class="post-tags"><li>ci-cd</li><li>devops</li><li>github-pages</li><li>reliability</li></ul>
+    <h1 class="post-title">PR 合併不等於上線：替多站靜態架構打造 0-Token 合併後活頁煙霧測試</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-v2-live-smoke-ci.png" alt="從 PR 合併、建置發布到 HTTP 200 活頁探針的 0-Token Smoke CI 流程圖" width="1600" height="900">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，內含可直接跑的程式碼與驗收指令——<a href="/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci.agent.md">中文版</a>・<a href="/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci.en.agent.md">English</a></div>
+    <div class="post-body">
+<h2>一、PR 顯示 Merged，不代表使用者看得到頁面</h2>
+<p>當你同時維護 5 個以上的靜態產品站點（入口門戶、技術部落格、GPU 價格看板、小工具頁），很容易陷入「<strong>合併即結束</strong>」的錯覺：PR 過了、合併綠燈亮了，帳本就隨手關單。</p>
+<p>直到實際用 <code>curl</code> 逐站掃描線上網址，才發現兩個真實發生在生產環境的斷鏈：</p>
+<ul>
+  <li><strong>子路徑返回 <code>HTTP 404</code></strong>：私有原始碼倉庫合併了新頁面，但跨倉庫的 <code>publish-site.yml</code> 只設定 <code>workflow_dispatch</code> 與每日排程、沒有監聽 <code>push: branches: [main]</code>，公開 GitHub Pages 根本還沒拿到新版建置產物。</li>
+  <li><strong>新站點網域返回 <code>HTTP 000</code></strong>：倉庫仍是 private 且 Pages／DNS CNAME 尚未對齊，上線網址連 TLS 握手都還沒有通。</li>
+</ul>
+<p>只要沒有「對著公開 HTTPS 網址驗收 <code>HTTP 200</code>＋關鍵標記」的最後一關，所有 PR 合併都只是自報完工。</p>
+
+<h2>二、多站靜態部署常見失敗模式實測矩陣</h2>
+<table>
+  <thead>
+    <tr>
+      <th>異常模式</th>
+      <th>線上實測狀態碼</th>
+      <th>根因分析</th>
+      <th>自動防線</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>跨庫建置未自動觸發</td>
+      <td><code>HTTP 404</code>（新路由遺失）</td>
+      <td>Workflow 缺 <code>push</code>＋<code>paths: ['web/**']</code> 觸發條件</td>
+      <td>合併進 <code>main</code> 自動觸發 build＋deploy</td>
+    </tr>
+    <tr>
+      <td>私人庫／DNS CNAME 未通</td>
+      <td><code>HTTP 000</code>（連線失敗）</td>
+      <td>尚未切換公開、或 <code>CNAME</code> 檔遺失／DNS 未指向</td>
+      <td>公開站 <code>CNAME</code> 入版控＋煙霧清單必查</td>
+    </tr>
+    <tr>
+      <td><code>rsync --delete</code> 誤清根檔</td>
+      <td><code>HTTP 404</code> / 網域失效</td>
+      <td>建置輸出資料夾漏放 <code>CNAME</code> 或靜態子頁</td>
+      <td>放進 <code>public/</code> 自動複製並驗證</td>
+    </tr>
+    <tr>
+      <td>建置空頁／編譯報錯殘留</td>
+      <td><code>HTTP 200</code>（假正常）</td>
+      <td>只檢查狀態碼 <code>200</code>，沒驗實際內容標記</td>
+      <td>同時斷言頁面含預期關鍵字串</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>三、合併後自動建置與活頁煙霧閉環</h2>
+<pre><code class="language-text">  [PR Merged to main]
+          │  (paths: ['web/**', 'src/**'])
+          ▼
+┌────────────────────────────────────────────────────────────────────┐
+│ GitHub Actions: build-and-deploy                                   │
+│   1. npm ci &amp;&amp; npm run build                                       │
+│   2. 同步產物至公開 GitHub Pages 倉庫 (保留 .git 與 CNAME)          │
+│   3. wait 30s (CDN / Pages Edge 傳播緩衝)                          │
+└───────────────────────────────┬────────────────────────────────────┘
+                                │
+                                ▼
+┌────────────────────────────────────────────────────────────────────┐
+│ Step 4: python3 scripts/live_smoke.py (0 LLM Tokens, &lt; 2s)        │
+│   - 逐一 GET 所有公開路由 (帶明確 User-Agent，避免 WAF 誤殺)        │
+│   - 同時斷言 status == 200 且 body 包含 required_marker             │
+│   - 任一網址回 404 / 000 / 缺標記 ──▶ exit 1 直接阻擋＆紅燈告警    │
+└────────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h2>四、核心實作程式碼（零外部依賴，可直接放進專案）</h2>
+
+<h3>1. 零依賴多站活頁煙霧測試腳本（<code>scripts/live_smoke.py</code>）</h3>
+<pre><code class="language-python">#!/usr/bin/env python3
+# Zero-dependency Post-Merge Live Smoke Checker for multi-site static fleets.
+from dataclasses import dataclass
+import sys
+import time
+import urllib.error
+import urllib.request
+
+@dataclass(frozen=True)
+class SmokeTarget:
+    name: str
+    url: str
+    expected_status: int = 200
+    required_marker: str = ""
+
+TARGETS = [
+    SmokeTarget("Portal", "https://plaigroundlab.com/", 200, "PlAIground Lab"),
+    SmokeTarget("Blog", "https://blog.plaigroundlab.com/", 200, "AI Geek Blog"),
+    SmokeTarget("ComputeQuote", "https://computequote.plaigroundlab.com/", 200, "ComputeQuote"),
+    SmokeTarget("Calculator", "https://computequote.plaigroundlab.com/calculator/", 200, "Payback Calculator"),
+]
+
+def probe(target: SmokeTarget, timeout: float = 12.0) -&gt; bool:
+    req = urllib.request.Request(
+        target.url,
+        headers={"User-Agent": "PlAIgroundLab-LiveSmoke/1.0 (+https://plaigroundlab.com)"},
+    )
+    t0 = time.monotonic()
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            status = int(resp.getcode() or 0)
+            body = resp.read().decode("utf-8", errors="replace")
+            ms = round((time.monotonic() - t0) * 1000.0, 1)
+            ok = (status == target.expected_status) and (target.required_marker.lower() in body.lower())
+            print(f"[{'PASS' if ok else 'FAIL'}] {status} ({ms}ms) {target.name} -&gt; {target.url}")
+            return ok
+    except urllib.error.HTTPError as e:
+        print(f"[FAIL] {e.code} {target.name} -&gt; {target.url}", file=sys.stderr)
+        return False
+    except Exception as e:
+        print(f"[FAIL] 000 ({e}) {target.name} -&gt; {target.url}", file=sys.stderr)
+        return False
+
+if __name__ == "__main__":
+    results = [probe(t) for t in TARGETS]
+    raise SystemExit(0 if all(results) else 1)</code></pre>
+
+<h3>2. GitHub Actions 自動建置＋路徑過濾＋Deploy 後即時驗證</h3>
+<pre><code class="language-yaml">name: Publish Site &amp; Verify Live
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - "web/**"     # 僅前端異動才建置，不因 docs/scripts 更動白燒 Actions 分鐘數
+
+jobs:
+  deploy-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: cd web &amp;&amp; npm ci &amp;&amp; npm run build
+      - name: Deploy &amp; Verify Live Routes
+        run: |
+          sleep 30
+          python3 scripts/live_smoke.py</code></pre>
+
+<h3>3. Ephemeral Local Server 單元測試模式（確認 CI 不依賴外部網路也能測對）</h3>
+<pre><code class="language-python">import http.server
+import threading
+import unittest
+
+class SmokeServerTest(unittest.TestCase):
+    def test_catches_404_and_200(self):
+        # 啟動 127.0.0.1 臨時隨機 port，獨立驗證 200+marker 通過與 404 失敗邏輯
+        srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
+        t = threading.Thread(target=srv.serve_forever, daemon=True)
+        t.start()
+        try:
+            port = srv.server_address[1]
+            self.assertTrue(probe(SmokeTarget("ok", f"http://127.0.0.1:{port}/ok", 200, "Calculator")))
+            self.assertFalse(probe(SmokeTarget("404", f"http://127.0.0.1:{port}/missing", 200, "Calculator")))
+        finally:
+            srv.shutdown()
+            srv.server_close()</code></pre>
+
+<h2>五、實際踩過的 3 個部署地雷（含解法）</h2>
+<ol>
+  <li><strong>跨庫 PR 推不上去，原來卡在 PAT 缺少 <code>workflow</code> scope</strong>：自動化環境送 PR 修改 <code>.github/workflows/*.yml</code> 時常被遠端直接拒收。解法是在腳本裡預先準備明確 fallback：先將建議 YAML diff 檢出保留給擁有完整權限的維護者一次套用，不要讓整個靜態頁面開發分支卡死。</li>
+  <li><strong>Python 預設 User-Agent 遭邊緣 WAF 擋成 <code>HTTP 403</code></strong>：瀏覽器與 <code>curl</code> 打同一頁都是 <code>200 OK</code>，只有 <code>urllib</code> 預設字串 <code>Python-urllib/3.x</code> 被安全規則擋下。自訂乾淨的識別標頭即可穩定通過檢查。</li>
+  <li><strong>沒有加 <code>paths:</code> 過濾導致文件與資料異動狂觸發發布 CI</strong>：把每次資料抓價與網站建置綁在同一個 <code>on: push</code> 會浪費大量免費 Actions 額度。加上 <code>paths: ['web/**']</code> 後，只有真正影響靜態站產物的提交才會重建上線。</li>
+</ol>
+
+<p>資料日期：2026-11-25。所有程式碼與實測失敗模式皆來自 PlAIground Lab 多站營運並已完成全面脫敏。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab · LIVE TOOLS</p>
+  <p class="housead-title">自由接案報價總是憑感覺？60 秒算出合理時薪並產出分享報價單</p>
+  <p class="housead-body">純瀏覽器端運算，免註冊、資料不上傳，一鍵複製唯讀報價連結或列印 PDF。</p>
+  <a class="housead-link" href="https://plaigroundlab.com/?utm_source=blog&utm_medium=housead&utm_campaign=live-smoke-ci">探索 PlAIground Lab 全站工具 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+<script src="/assets/blog-ui.js" defer></script>
+</body>
+</html>

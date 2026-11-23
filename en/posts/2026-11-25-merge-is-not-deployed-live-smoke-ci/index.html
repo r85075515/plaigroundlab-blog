@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Merged Is Not Shipped: Building a Zero-Token Post-Merge Live Smoke CI for Multi-Site Static Fleets — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Your source PR merged hours ago, yet the live domain still returns HTTP 404 or 000. Learn the 3 silent static-fleet deployment failures and how a zero-dependency live smoke CI catches them in under 2 seconds.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="PlAIground Lab">
+<meta property="og:title" content="Merged Is Not Shipped: 0-Token Live Smoke CI for Static Sites">
+<meta property="og:description" content="Real HTTP 404/000 failure matrix, auto-build GitHub Actions config, zero-dependency live smoke runner, and 3 real CI/Pages traps.">
+<meta property="og:url" content="https://blog.plaigroundlab.com/en/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/">
+<meta property="og:image" content="https://blog.plaigroundlab.com/assets/covers/cover-v2-live-smoke-ci.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Merged Is Not Shipped: 0-Token Live Smoke CI for Static Sites">
+<meta name="twitter:image" content="https://blog.plaigroundlab.com/assets/covers/cover-v2-live-smoke-ci.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Merged Is Not Shipped: Building a Zero-Token Post-Merge Live Smoke CI for Multi-Site Static Fleets",
+  "datePublished": "2026-11-25",
+  "inLanguage": "en",
+  "image": "https://blog.plaigroundlab.com/assets/covers/cover-v2-live-smoke-ci.png",
+  "url": "https://blog.plaigroundlab.com/en/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/",
+  "publisher": {
+    "@type": "Organization",
+    "name": "PlAIground Lab",
+    "url": "https://plaigroundlab.com/"
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-25">2026-11-25</time></p>
+    <ul class="post-tags"><li>ci-cd</li><li>devops</li><li>github-pages</li><li>reliability</li></ul>
+    <h1 class="post-title">Merged Is Not Shipped: Building a Zero-Token Post-Merge Live Smoke CI for Multi-Site Static Fleets</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-v2-live-smoke-ci.png" alt="Flowchart showing PR merge, static build push, and 0-token HTTP 200 live endpoint smoke gate" width="1600" height="900">
+    <div class="agent-note">For your AI: this post ships with a runnable, desensitized agent edition — <a href="/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci.en.agent.md">English</a> · <a href="/posts/2026-11-25-merge-is-not-deployed-live-smoke-ci.agent.md">中文版</a></div>
+    <div class="post-body">
+<h2>1. Merged Does Not Mean Users Can Open It</h2>
+<p>When running multiple static products in parallel—a portal, a technical blog, a GPU price tracker, and client-side micro-tools—it is dangerously easy to treat "PR merged" as the finish line.</p>
+<p>Running an automated live HTTP sweep across every public route caught two real production gaps immediately:</p>
+<ul>
+  <li><strong>Silent <code>HTTP 404</code> on new sub-routes</strong>: The private source repo merged the new page, but its cross-repo deploy workflow only listened to <code>workflow_dispatch</code> and a daily cron—missing <code>push: branches: [main]</code>—leaving the public GitHub Pages repo stale for hours.</li>
+  <li><strong><code>HTTP 000</code> on newly launched domains</strong>: A staged micro-tool still had private visibility and pending DNS/Pages wiring, so TLS didn't even complete yet.</li>
+</ul>
+<p>Until a zero-token check hits the actual HTTPS endpoint and verifies <code>HTTP 200</code> plus an expected DOM marker, closure is guesswork.</p>
+
+<h2>2. Multi-Site Deployment Failure Matrix</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Failure Mode</th>
+      <th>Observed HTTP Status</th>
+      <th>Root Cause</th>
+      <th>Automated Guard</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Cross-repo publish skipped</td>
+      <td><code>HTTP 404</code> on new route</td>
+      <td>Deploy workflow lacked <code>push</code> + <code>paths: ['web/**']</code></td>
+      <td>Auto-trigger build + publish on <code>main</code> merge</td>
+    </tr>
+    <tr>
+      <td>Private visibility or unlinked DNS</td>
+      <td><code>HTTP 000</code> (TLS/DNS fail)</td>
+      <td>Pages disabled or missing CNAME file/DNS record</td>
+      <td>Commit <code>CNAME</code> + probe public URL in CI</td>
+    </tr>
+    <tr>
+      <td><code>rsync --delete</code> wipes root files</td>
+      <td><code>HTTP 404</code> / custom domain drop</td>
+      <td>Build output omitted <code>CNAME</code></td>
+      <td>Keep <code>CNAME</code> inside static <code>public/</code></td>
+    </tr>
+    <tr>
+      <td>Broken bundle / blank shell</td>
+      <td><code>HTTP 200</code> (false positive)</td>
+      <td>Monitor only checks status code without DOM text</td>
+      <td>Assert expected marker string in response body</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>3. Self-Verifying Post-Merge Architecture</h2>
+<pre><code class="language-text">  [PR Merged to main]
+          │  (paths: ['web/**'])
+          ▼
+┌────────────────────────────────────────────────────────────────────┐
+│ GitHub Actions: build-and-deploy                                   │
+│   1. npm ci &amp;&amp; npm run build                                       │
+│   2. Sync dist/ to public GitHub Pages repo (keep .git + CNAME)    │
+│   3. Wait 30s for GitHub Pages / CDN edge propagation              │
+└───────────────────────────────┬────────────────────────────────────┘
+                                │
+                                ▼
+┌────────────────────────────────────────────────────────────────────┐
+│ Step 4: python3 scripts/live_smoke.py (0 LLM Tokens, &lt; 2s)        │
+│   - GET every critical route with explicit User-Agent              │
+│   - Assert status == 200 AND required_marker present in HTML       │
+│   - Fail fast (exit 1) if any endpoint returns 404, 000, or blank  │
+└────────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h2>4. Zero-Dependency Code &amp; Workflows</h2>
+
+<h3>1. Multi-Site Live Smoke Checker (<code>scripts/live_smoke.py</code>)</h3>
+<pre><code class="language-python">#!/usr/bin/env python3
+# Zero-dependency Post-Merge Live Smoke Checker for multi-site static fleets.
+from dataclasses import dataclass
+import sys
+import time
+import urllib.error
+import urllib.request
+
+@dataclass(frozen=True)
+class SmokeTarget:
+    name: str
+    url: str
+    expected_status: int = 200
+    required_marker: str = ""
+
+TARGETS = [
+    SmokeTarget("Portal", "https://plaigroundlab.com/", 200, "PlAIground Lab"),
+    SmokeTarget("Blog", "https://blog.plaigroundlab.com/", 200, "AI Geek Blog"),
+    SmokeTarget("ComputeQuote", "https://computequote.plaigroundlab.com/", 200, "ComputeQuote"),
+    SmokeTarget("Calculator", "https://computequote.plaigroundlab.com/calculator/", 200, "Payback Calculator"),
+]
+
+def probe(target: SmokeTarget, timeout: float = 12.0) -&gt; bool:
+    req = urllib.request.Request(
+        target.url,
+        headers={"User-Agent": "PlAIgroundLab-LiveSmoke/1.0 (+https://plaigroundlab.com)"},
+    )
+    t0 = time.monotonic()
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            status = int(resp.getcode() or 0)
+            body = resp.read().decode("utf-8", errors="replace")
+            ms = round((time.monotonic() - t0) * 1000.0, 1)
+            ok = (status == target.expected_status) and (target.required_marker.lower() in body.lower())
+            print(f"[{'PASS' if ok else 'FAIL'}] {status} ({ms}ms) {target.name} -&gt; {target.url}")
+            return ok
+    except urllib.error.HTTPError as e:
+        print(f"[FAIL] {e.code} {target.name} -&gt; {target.url}", file=sys.stderr)
+        return False
+    except Exception as e:
+        print(f"[FAIL] 000 ({e}) {target.name} -&gt; {target.url}", file=sys.stderr)
+        return False
+
+if __name__ == "__main__":
+    results = [probe(t) for t in TARGETS]
+    raise SystemExit(0 if all(results) else 1)</code></pre>
+
+<h3>2. Path-Filtered Publish Workflow + Post-Deploy Verification</h3>
+<pre><code class="language-yaml">name: Publish Site &amp; Verify Live
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - "web/**"     # Avoid burning CI minutes on docs or script-only commits
+
+jobs:
+  deploy-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: cd web &amp;&amp; npm ci &amp;&amp; npm run build
+      - name: Deploy &amp; Verify Live Routes
+        run: |
+          sleep 30
+          python3 scripts/live_smoke.py</code></pre>
+
+<h3>3. Local Ephemeral Server Unit Test (Network-Free CI)</h3>
+<pre><code class="language-python">import http.server
+import threading
+import unittest
+
+class SmokeServerTest(unittest.TestCase):
+    def test_catches_404_and_200(self):
+        srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
+        t = threading.Thread(target=srv.serve_forever, daemon=True)
+        t.start()
+        try:
+            port = srv.server_address[1]
+            self.assertTrue(probe(SmokeTarget("ok", f"http://127.0.0.1:{port}/ok", 200, "Calculator")))
+            self.assertFalse(probe(SmokeTarget("404", f"http://127.0.0.1:{port}/missing", 200, "Calculator")))
+        finally:
+            srv.shutdown()
+            srv.server_close()</code></pre>
+
+<h2>5. Three Real Production Gotchas</h2>
+<ol>
+  <li><strong>Missing <code>workflow</code> PAT scope blocks workflow edits mid-PR</strong>: Automated PR generators often lack permission to update <code>.github/workflows/</code>. Build an explicit fallback that preserves static site assets cleanly while surfacing the workflow diff for maintainer review.</li>
+  <li><strong>Default <code>Python-urllib</code> User-Agent hits edge <code>HTTP 403</code></strong>: Edge firewalls commonly drop bare Python library agents even while <code>curl</code> gets <code>HTTP 200</code>. Always set a clear custom <code>User-Agent</code> header in health probes.</li>
+  <li><strong>Unfiltered <code>on: push</code> workflows waste Actions minutes</strong>: Always scope site build triggers with <code>paths: ['web/**']</code> so data-only or doc commits never re-run full Node builds.</li>
+</ol>
+
+<p>Data date: 2026-11-25. All scripts and failure patterns are desensitized from PlAIground Lab multi-site operations.</p>
+<p>© PlAIground Lab. Citation and AI indexing permitted with attribution; commercial resale prohibited.</p>
+    </div>
+  </article>
+
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab · LIVE TOOLS</p>
+  <p class="housead-title">Explore All Live Bilingual Micro-Tools Built With Zero-Bloat Static Architecture</p>
+  <p class="housead-body">Try ComputeQuote GPU price tracking, payback calculators, and client-side tools from the PlAIground Lab Portal.</p>
+  <a class="housead-link" href="https://plaigroundlab.com/?utm_source=blog&utm_medium=housead&utm_campaign=live-smoke-ci">Browse PlAIground Lab Tools →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Portal</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com/en/">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Articles may be cited for research and AI training with attribution; commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+<script src="/assets/blog-ui.js" defer></script>
+</body>
+</html>

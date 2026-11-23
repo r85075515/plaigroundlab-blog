@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>把 AI 代理人常駐記憶從 101 KB 砍到 20 KB 卻不失憶：漸進式揭露與防復胖哨兵實戰 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="AI 代理的常駐規則檔越寫越大、每輪平白多燒 25K tokens 卻還是常漏掉重點？看我們如何用漸進式指標索引＋按需 runbook＋0-Token CI 預算哨兵，把 101.2 KB 記憶瘦身到 20.4 KB。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="PlAIground Lab">
+<meta property="og:title" content="常駐記憶從 101 KB 砍到 20 KB 卻不失憶：Progressive Disclosure 與 CI 防復胖哨兵">
+<meta property="og:description" content="80% 體積瘦身實測數據表、漸進式指標架構、Python Byte/Line Watchdog 腳本與 3 個真實瘦身地雷。">
+<meta property="og:url" content="https://blog.plaigroundlab.com/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/">
+<meta property="og:image" content="https://blog.plaigroundlab.com/assets/covers/cover-v2-memory-slimming.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="常駐記憶從 101 KB 砍到 20 KB 卻不失憶：Progressive Disclosure 與 CI 防復胖哨兵">
+<meta name="twitter:image" content="https://blog.plaigroundlab.com/assets/covers/cover-v2-memory-slimming.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "把 AI 代理人常駐記憶從 101 KB 砍到 20 KB 卻不失憶：漸進式揭露與防復胖哨兵實戰",
+  "datePublished": "2026-11-24",
+  "inLanguage": "zh-Hant",
+  "image": "https://blog.plaigroundlab.com/assets/covers/cover-v2-memory-slimming.png",
+  "url": "https://blog.plaigroundlab.com/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/",
+  "publisher": {
+    "@type": "Organization",
+    "name": "PlAIground Lab",
+    "url": "https://plaigroundlab.com/"
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-24">2026-11-24</time></p>
+    <ul class="post-tags"><li>architecture</li><li>context-engineering</li><li>ci-gate</li><li>agents</li></ul>
+    <h1 class="post-title">把 AI 代理人常駐記憶從 101 KB 砍到 20 KB 卻不失憶：漸進式揭露與防復胖哨兵實戰</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-v2-memory-slimming.png" alt="AI 代理人常駐記憶從 101 KB 瘦身到 20 KB 的漸進式揭露與 CI 防復胖架構圖" width="1600" height="900">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，內含可直接跑的程式碼與驗收指令——<a href="/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb.agent.md">中文版</a>・<a href="/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb.en.agent.md">English</a></div>
+    <div class="post-body">
+<h2>一、為什麼 101 KB 的「超完整記憶檔」反而讓 AI 變笨？</h2>
+<p>多數人調教自治型 AI 代理時都有同一個反射動作：只要系統踩過一次坑，就在系統提示或常駐 <code>MEMORY.md</code> 尾端補一段「以後永遠記得這樣做」。幾週下來，三個常駐開機必讀檔（操作手冊、長期記憶、工具索引）悄悄膨脹到合計 <strong>101.2 KB</strong>。</p>
+<p>看起來很有安全感，實測卻同時帶來三個反效果：</p>
+<ul>
+  <li><strong>每一輪都重播歷史故事</strong>：光喚醒模型打一句招呼，就要先吞下約 <code>25,000+</code> tokens 的陳年規則與細節，延遲明顯變慢、免費額度視窗幾輪就見底。</li>
+  <li><strong>Middle-Context 失憶（Lost in the Middle）</strong>：當所有領域的操作細節都塞在同一個起動脈絡裡，真正的硬紅線反而被無關段落稀釋。</li>
+  <li><strong>誰都不敢刪，越補越亂</strong>：人工直接開刀刪除舊條目，很容易把已經定版的埠號、驗收條件或帳號限制一起砍掉，造成跨週失憶。</li>
+</ul>
+<p>解方不是靠模型記性，而是做一套 <strong>「指標驅動＋按需載入＋確定性預算哨兵」</strong> 的漸進式揭露（Progressive Disclosure）架構，把常駐檔案壓縮 <strong>80%</strong> 到 <strong>20.4 KB</strong>，同時 100% 保留可追溯的執行細節。</p>
+
+<h2>二、瘦身前後實測數據對比</h2>
+<table>
+  <thead>
+    <tr>
+      <th>指標</th>
+      <th>瘦身前（大鍋炒常駐檔）</th>
+      <th>瘦身後（指標索引＋5 份 Runbook）</th>
+      <th>實測變化</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>常駐檔案總容量</td>
+      <td><code>101.2 KB</code>（約 25.3K tokens）</td>
+      <td><code>20.4 KB</code>（約 5.1K tokens）</td>
+      <td><code>-79.8%</code> 起動載入量</td>
+    </tr>
+    <tr>
+      <td>核心憲法＋規則檔（AGENTS）</td>
+      <td><code>74.7 KB</code></td>
+      <td><code>8.9 KB</code></td>
+      <td><code>-88.1%</code>，紅線密度拉高</td>
+    </tr>
+    <tr>
+      <td>長期記憶檔（MEMORY）</td>
+      <td><code>25.7 KB</code></td>
+      <td><code>10.7 KB</code></td>
+      <td><code>-58.4%</code>，僅留真值與指標</td>
+    </tr>
+    <tr>
+      <td>領域細節載入方式</td>
+      <td>每輪無條件全量灌入</td>
+      <td><code>5</code> 份 <code>runbooks/*.md</code> 按任務條件讀取</td>
+      <td>無關領域 <code>0 B</code> 浪費</td>
+    </tr>
+    <tr>
+      <td>數週後防復胖防線</td>
+      <td>無（全靠人工自律）</td>
+      <td><code>0-Token</code> Budget Watchdog + CI 閘門</td>
+      <td>超限即於 PR 階段阻擋</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>三、漸進式揭露架構圖</h2>
+<pre><code class="language-text">┌────────────────────────────────────────────────────────────────────┐
+│ 層級 1：常駐起動索引（Always-On Boot Context &lt;= 24 KB 硬上限）       │
+│   ├── AGENTS.md   (8.9 KB)  -&gt; 硬紅線、角色邊界、故障退避規則        │
+│   ├── MEMORY.md   (10.7 KB) -&gt; 單一正本指標 (SSOT URLs / Sheet IDs)  │
+│   └── 動作指標表             -&gt; 「遇到 X 場景 -&gt; 先讀 runbooks/Y.md」│
+└───────────────────────────────┬────────────────────────────────────┘
+                                │ 僅在命中特定工作流時按需讀取 (Lazy Load)
+        ┌───────────────────────┼───────────────────────┐
+        ▼                       ▼                       ▼
+┌───────────────┐       ┌───────────────┐       ┌───────────────┐
+│ runbook-a.md  │       │ runbook-b.md  │       │ runbook-c.md  │
+│ 部署與發布SOP │       │ 數據抓取規格  │       │ 測試與煙霧閘  │
+└───────────────┘       └───────────────┘       └───────────────┘
+        ▲
+        │ 每次 PR / 每日排程
+┌────────────────────────────────────────────────────────────────────┐
+│ 層級 0：0-Token 防復胖哨兵 (context_watchdog.py)                   │
+│   檢查每個常駐檔是否超過硬編碼 byte/line 上限；超限即回 exit 1      │
+└────────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h2>四、核心程式碼與配置（已脫敏，可直接取用）</h2>
+
+<h3>1. 宣告式預算規則與指標索引（YAML 規格）</h3>
+<pre><code class="language-yaml"># context_budget.yaml — 引擎與上限完全分離，零硬編碼
+boot_files:
+  - path: AGENTS.md
+    max_bytes: 12288     # 硬上限 12 KB
+    max_lines: 220
+  - path: MEMORY.md
+    max_bytes: 14336     # 硬上限 14 KB
+    max_lines: 260
+
+pointer_routes:
+  - trigger: "deploy | pages | release"
+    load: "docs/runbooks/deploy-and-smoke.md"
+  - trigger: "schema | spreadsheet | ingest"
+    load: "docs/runbooks/data-pipeline.md"
+  - trigger: "budget | quota | incident"
+    load: "docs/runbooks/ops-guardrails.md"</code></pre>
+
+<h3>2. 0-Token 防復胖哨兵腳本（Python 標準庫，可進 CI）</h3>
+<pre><code class="language-python">#!/usr/bin/env python3
+# Zero-token watchdog enforcing hard byte/line budgets on always-on agent files.
+from pathlib import Path
+import json
+import sys
+
+# 若不引入 PyYAML，直接讀 JSON 版規則即可維持 0 依賴
+BUDGETS = {
+    "AGENTS.md": {"max_bytes": 12288, "max_lines": 220},
+    "MEMORY.md": {"max_bytes": 14336, "max_lines": 260},
+}
+
+def check_repo_budgets(root: Path) -&gt; int:
+    failures = []
+    for rel, limits in BUDGETS.items():
+        target = root / rel
+        if not target.exists():
+            failures.append(f"MISSING: {rel}")
+            continue
+        raw = target.read_bytes()
+        lines = raw.decode("utf-8", errors="replace").splitlines()
+        if len(raw) &gt; limits["max_bytes"]:
+            failures.append(f"OVERSIZE: {rel} = {len(raw)} B &gt; {limits['max_bytes']} B (move details to runbooks/)")
+        if len(lines) &gt; limits["max_lines"]:
+            failures.append(f"OVERLINE: {rel} = {len(lines)} lines &gt; {limits['max_lines']}")
+        else:
+            print(f"OK: {rel} ({len(raw)} B, {len(lines)} lines)")
+
+    if failures:
+        for msg in failures:
+            print(f"FAIL: {msg}", file=sys.stderr)
+        return 1
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(check_repo_budgets(Path(".")))</code></pre>
+
+<h3>3. GitHub Actions 防復胖閘門（僅在關鍵檔案異動時觸發）</h3>
+<pre><code class="language-yaml">name: Agent Context Budget Gate
+on:
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - "MEMORY.md"
+      - "docs/runbooks/**"
+
+jobs:
+  verify-budget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run 0-token budget &amp; link integrity check
+        run: python3 scripts/context_watchdog.py</code></pre>
+
+<h2>五、實際踩過的 3 個地雷與修補紀錄</h2>
+<ol>
+  <li><strong>把「真值」順手刪掉或換成模糊佔位符</strong>：早期瘦身最容易犯錯的，是把常駐檔裡的主機位址、Sheet ID、正本 URL 一併搬走卻沒在索引檔留可點擊識別碼，結果 AI 每次都猜錯或讀到舊副本。<strong>鐵律</strong>：所有「單一真實來源（SSOT）」的 ID、定版數字與紅線都必須以精簡真值留在索引檔裡，搬走的只限操作步驟與案例說明。</li>
+  <li><strong>沒有保留完整可回滾快照就原地覆寫</strong>：曾因一次性合併重寫多段文字，事後對帳才發現一條邊緣情境規則被誤刪。<strong>解法</strong>：瘦身必須分波進行，且在覆寫前先把原始檔與 <code>sha256</code> 雜湊封存備份，確保隨時能做逐行 diff 回溯。</li>
+  <li><strong>只做一次性大掃除、沒設自動化預算閘門</strong>：手動瘦身撐不過兩週就會被「只是多補三行註解」慢慢打回原形。唯有把 <code>max_bytes</code> 與 <code>max_lines</code> 寫進每次 PR 必跑的 0-token 檢查腳本，超限時強迫執行者把細節抽進 <code>docs/runbooks/</code>，系統才會長期維持在 20 KB 水位。</li>
+</ol>
+
+<p>資料日期：2026-11-24。所有數據與設計皆經過 PlAIground Lab 真實環境實測並完成全面脫敏整理。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab · TOKEN &amp; GPU ROI</p>
+  <p class="housead-title">每次推論都在燒上下文？先算清本地顯卡 vs 雲端算力成本</p>
+  <p class="housead-body">在 ComputeQuote 比較最新 GPU 街價與本地大模型 32B/70B 裝機回本計算機。</p>
+  <a class="housead-link" href="https://computequote.plaigroundlab.com/calculator/?utm_source=blog&utm_medium=housead&utm_campaign=memory-slimming">打開 GPU 回本計算機 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+<script src="/assets/blog-ui.js" defer></script>
+</body>
+</html>

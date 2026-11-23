@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cutting Always-On Agent Context by 80% (101 KB to 20 KB) Without Amnesia: Progressive Disclosure &amp; Anti-Bloat Watchdogs — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Bloated agent instruction files burn ~25K input tokens every turn while models miss rules in the middle. Here is how progressive disclosure + a 0-token CI budget guard slimmed 101.2 KB down to 20.4 KB with zero rule amnesia.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="PlAIground Lab">
+<meta property="og:title" content="Cutting Always-On Agent Context from 101 KB to 20 KB Without Amnesia">
+<meta property="og:description" content="Real before/after benchmarks (-80%), pointer-based runbooks, a 0-token Python budget watchdog, and 3 real context-slimming pitfalls.">
+<meta property="og:url" content="https://blog.plaigroundlab.com/en/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/">
+<meta property="og:image" content="https://blog.plaigroundlab.com/assets/covers/cover-v2-memory-slimming.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cutting Always-On Agent Context from 101 KB to 20 KB Without Amnesia">
+<meta name="twitter:image" content="https://blog.plaigroundlab.com/assets/covers/cover-v2-memory-slimming.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Cutting Always-On Agent Context by 80% (101 KB to 20 KB) Without Amnesia: Progressive Disclosure & Anti-Bloat Watchdogs",
+  "datePublished": "2026-11-24",
+  "inLanguage": "en",
+  "image": "https://blog.plaigroundlab.com/assets/covers/cover-v2-memory-slimming.png",
+  "url": "https://blog.plaigroundlab.com/en/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/",
+  "publisher": {
+    "@type": "Organization",
+    "name": "PlAIground Lab",
+    "url": "https://plaigroundlab.com/"
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-24">2026-11-24</time></p>
+    <ul class="post-tags"><li>architecture</li><li>context-engineering</li><li>ci-gate</li><li>agents</li></ul>
+    <h1 class="post-title">Cutting Always-On Agent Context by 80% (101 KB to 20 KB) Without Amnesia: Progressive Disclosure &amp; Anti-Bloat Watchdogs</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-v2-memory-slimming.png" alt="Architecture diagram cutting always-on agent context from 101 KB to 20 KB using progressive disclosure and CI bloat watchdogs" width="1600" height="900">
+    <div class="agent-note">For your AI: this post ships with a runnable, desensitized agent edition — <a href="/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb.en.agent.md">English</a> · <a href="/posts/2026-11-24-agent-memory-slimming-101kb-to-20kb.agent.md">中文版</a></div>
+    <div class="post-body">
+<h2>1. Why a 101 KB "Complete Manual" Makes AI Agents Forget More</h2>
+<p>Almost every autonomous agent setup starts with the same reflex: whenever a script fails or a policy gets clarified, someone appends another paragraph to the permanent system prompt or <code>MEMORY.md</code>. Within weeks, boot context files quietly ballooned to <strong>101.2 KB</strong>.</p>
+<p>Counterintuitively, stuffing everything into always-on context caused three immediate failures:</p>
+<ul>
+  <li><strong>25,000+ tokens replayed every turn</strong>: Even a trivial status check had to pay full prompt tax, draining rate-limited windows fast.</li>
+  <li><strong>Lost-in-the-middle rule blindness</strong>: Critical safety constraints got buried inside pages of stale troubleshooting stories.</li>
+  <li><strong>Fear of deleting</strong>: Editing a giant prose manual risks wiping settled ports, IDs, or acceptance thresholds.</li>
+</ul>
+<p>Our fix was <strong>Progressive Disclosure + Deterministic Budget Enforcement</strong>: keep boot files strictly under <strong>20.4 KB</strong> (~80% smaller) via explicit action-pointer tables while moving domain SOPs into lazy-loaded runbooks.</p>
+
+<h2>2. Before vs. After Production Metrics</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Metric</th>
+      <th>Legacy Monolith Context</th>
+      <th>Pointer Index + 5 Runbooks</th>
+      <th>Measured Impact</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Total Boot Footprint</td>
+      <td><code>101.2 KB</code> (~25.3K tokens)</td>
+      <td><code>20.4 KB</code> (~5.1K tokens)</td>
+      <td><code>-79.8%</code> cold boot size</td>
+    </tr>
+    <tr>
+      <td>Core Charter (AGENTS)</td>
+      <td><code>74.7 KB</code></td>
+      <td><code>8.9 KB</code></td>
+      <td><code>-88.1%</code>, crisp hard rules</td>
+    </tr>
+    <tr>
+      <td>Operational Index (MEMORY)</td>
+      <td><code>25.7 KB</code></td>
+      <td><code>10.7 KB</code></td>
+      <td><code>-58.4%</code>, SSOT pointers only</td>
+    </tr>
+    <tr>
+      <td>Domain Procedure Loading</td>
+      <td>Always loaded on every turn</td>
+      <td><code>5</code> lazy-loaded <code>runbooks/*.md</code></td>
+      <td><code>0 B</code> wasted off-domain</td>
+    </tr>
+    <tr>
+      <td>Anti-Bloat Enforcement</td>
+      <td>Manual discipline only</td>
+      <td><code>0-Token</code> CI byte &amp; line gate</td>
+      <td>Blocks bloat at PR time</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>3. Progressive Disclosure Architecture</h2>
+<pre><code class="language-text">┌────────────────────────────────────────────────────────────────────┐
+│ Tier 1: Always-On Boot Context (&lt;= 24 KB Hard Ceiling)             │
+│   ├── AGENTS.md   (8.9 KB)  -&gt; Hard rules, role boundaries, gates  │
+│   ├── MEMORY.md   (10.7 KB) -&gt; Exact SSOT IDs + Action Pointers    │
+│   └── Route Table            -&gt; "If task hits X -&gt; read runbook Y" │
+└───────────────────────────────┬────────────────────────────────────┘
+                                │ Lazy-loaded ONLY when task matches
+        ┌───────────────────────┼───────────────────────┐
+        ▼                       ▼                       ▼
+┌───────────────┐       ┌───────────────┐       ┌───────────────┐
+│ runbook-a.md  │       │ runbook-b.md  │       │ runbook-c.md  │
+│ Deploy &amp; Smoke│       │ Data &amp; Schema │       │ Ops Guardrails│
+└───────────────┘       └───────────────┘       └───────────────┘
+        ▲
+        │ Every PR / Daily Check
+┌────────────────────────────────────────────────────────────────────┐
+│ Tier 0: 0-Token Budget Watchdog (context_watchdog.py)              │
+│   Asserts byte &amp; line caps; non-zero exit forces extraction        │
+└────────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h2>4. Desensitized Runnable Code &amp; Configs</h2>
+
+<h3>1. Declarative Context Routing &amp; Hard Caps</h3>
+<pre><code class="language-yaml"># context_budget.yaml — explicit thresholds, zero magic numbers
+boot_files:
+  - path: AGENTS.md
+    max_bytes: 12288     # Hard 12 KB ceiling
+    max_lines: 220
+  - path: MEMORY.md
+    max_bytes: 14336     # Hard 14 KB ceiling
+    max_lines: 260
+
+pointer_routes:
+  - trigger: "deploy | pages | release"
+    load: "docs/runbooks/deploy-and-smoke.md"
+  - trigger: "schema | spreadsheet | ingest"
+    load: "docs/runbooks/data-pipeline.md"
+  - trigger: "budget | quota | incident"
+    load: "docs/runbooks/ops-guardrails.md"</code></pre>
+
+<h3>2. Zero-Token Anti-Bloat CI Guard (Python Stdlib Only)</h3>
+<pre><code class="language-python">#!/usr/bin/env python3
+# Zero-token watchdog enforcing hard byte/line budgets on always-on agent files.
+from pathlib import Path
+import sys
+
+BUDGETS = {
+    "AGENTS.md": {"max_bytes": 12288, "max_lines": 220},
+    "MEMORY.md": {"max_bytes": 14336, "max_lines": 260},
+}
+
+def check_repo_budgets(root: Path) -&gt; int:
+    failures = []
+    for rel, limits in BUDGETS.items():
+        target = root / rel
+        if not target.exists():
+            failures.append(f"MISSING: {rel}")
+            continue
+        raw = target.read_bytes()
+        lines = raw.decode("utf-8", errors="replace").splitlines()
+        if len(raw) &gt; limits["max_bytes"]:
+            failures.append(f"OVERSIZE: {rel} = {len(raw)} B &gt; {limits['max_bytes']} B (move details to runbooks/)")
+        if len(lines) &gt; limits["max_lines"]:
+            failures.append(f"OVERLINE: {rel} = {len(lines)} lines &gt; {limits['max_lines']}")
+        else:
+            print(f"OK: {rel} ({len(raw)} B, {len(lines)} lines)")
+
+    if failures:
+        for msg in failures:
+            print(f"FAIL: {msg}", file=sys.stderr)
+        return 1
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(check_repo_budgets(Path(".")))</code></pre>
+
+<h3>3. Path-Filtered GitHub Actions Gate</h3>
+<pre><code class="language-yaml">name: Agent Context Budget Gate
+on:
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - "MEMORY.md"
+      - "docs/runbooks/**"
+
+jobs:
+  verify-budget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run 0-token budget check
+        run: python3 scripts/context_watchdog.py</code></pre>
+
+<h2>5. Three Real Production Pitfalls We Fixed</h2>
+<ol>
+  <li><strong>Accidental masking of real SSOT identifiers</strong>: Early slimming drafts accidentally replaced concrete IDs and canonical endpoints with generic placeholders, causing agents to pick stale copies on later turns. <strong>Rule</strong>: keep exact canonical IDs, thresholds, and non-secret SSOT values inside the index; move only multi-step prose into runbooks.</li>
+  <li><strong>In-place overwrites without immutable rollback snapshots</strong>: Never rewrite boot context blindly. Always write original byte counts and SHA-256 checksums to an untouched backup snapshot before applying slimming waves.</li>
+  <li><strong>One-off cleanups without an automated CI ceiling</strong>: Without a failing CI gate when <code>AGENTS.md</code> crosses 12 KB, "just three quick lines" brings the 100 KB bloat right back within two weeks.</li>
+</ol>
+
+<p>Data date: 2026-11-24. All code and benchmarks are desensitized from PlAIground Lab internal engineering runs.</p>
+<p>© PlAIground Lab. Citation and AI indexing permitted with attribution; commercial resale prohibited.</p>
+    </div>
+  </article>
+
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab · TOKEN &amp; GPU ROI</p>
+  <p class="housead-title">Watching Every Prompt Token? Compare Local GPUs vs. Cloud Pricing</p>
+  <p class="housead-body">Track live street prices and compute local RTX 5090 / 4090 / 3090 break-even weeks on ComputeQuote.</p>
+  <a class="housead-link" href="https://computequote.plaigroundlab.com/calculator/?utm_source=blog&utm_medium=housead&utm_campaign=memory-slimming">Open GPU Payback Calculator →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Portal</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com/en/">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Articles may be cited for research and AI training with attribution; commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+<script src="/assets/blog-ui.js" defer></script>
+</body>
+</html>
