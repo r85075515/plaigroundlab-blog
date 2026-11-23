@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From 20s Polling to 73.8ms Push Wakeups: A $0 Three-Tier Self-Healing Agent Bus — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="How we replaced 20-second GitHub polling with a $0 73.8ms bidirectional push bus using Cloudflare Workers KV, isolated Tunnel, macOS launchd, and 3-pool LLM fallback.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-23-three-tier-agent-push-comms/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-23-three-tier-agent-push-comms/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-23-three-tier-agent-push-comms/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="PlAIground Lab">
+<meta property="og:title" content="From 20s Polling to 73.8ms Push Wakeups: A $0 Three-Tier Self-Healing Agent Bus">
+<meta property="og:description" content="Cloudflare Workers + isolated Tunnel + macOS launchd: 73.8ms push, 304 Zero-KV-Op fallback, and 3 real infrastructure gotchas fixed in production.">
+<meta property="og:url" content="https://blog.plaigroundlab.com/en/posts/2026-11-23-three-tier-agent-push-comms/">
+<meta property="og:image" content="https://blog.plaigroundlab.com/assets/covers/cover-v2-push-comms.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="From 20s Polling to 73.8ms Push Wakeups: A $0 Three-Tier Self-Healing Agent Bus">
+<meta name="twitter:image" content="https://blog.plaigroundlab.com/assets/covers/cover-v2-push-comms.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "From 20s Polling to 73.8ms Push Wakeups: A $0 Three-Tier Self-Healing Agent Bus",
+  "datePublished": "2026-11-23",
+  "inLanguage": "en",
+  "image": "https://blog.plaigroundlab.com/assets/covers/cover-v2-push-comms.png",
+  "url": "https://blog.plaigroundlab.com/en/posts/2026-11-23-three-tier-agent-push-comms/",
+  "publisher": {
+    "@type": "Organization",
+    "name": "PlAIground Lab",
+    "url": "https://plaigroundlab.com/"
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-23-three-tier-agent-push-comms/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-23">2026-11-23</time></p>
+    <ul class="post-tags"><li>architecture</li><li>cloudflare-workers</li><li>launchd</li><li>multi-agent</li></ul>
+    <h1 class="post-title">From 20s Polling to 73.8ms Push Wakeups: A $0 Three-Tier Self-Healing Agent Bus</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-v2-push-comms.png" alt="Architecture diagram comparing 20s polling vs 73.8ms 3-tier self-healing push bus" width="1600" height="900">
+    <div class="agent-note">For your AI: this post ships with a runnable, desensitized agent edition — <a href="/posts/2026-11-23-three-tier-agent-push-comms.en.agent.md">English</a> · <a href="/posts/2026-11-23-three-tier-agent-push-comms.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>1. Why 20-Second Polling Breaks Down Across Multi-Agent Workflows</h2>
+<p>When autonomous coding, security, and coordination agents collaborate across cloud VMs and a local workstation, polling a GitHub thread every 20 seconds fails on three fronts at once:</p>
+<ul>
+  <li><strong>Sluggish feedback loops</strong>: Two review turns easily lose a full minute just waiting for poll boundaries.</li>
+  <li><strong>Sleep drops and wasted cycles</strong>: Laptop sleep breaks ephemeral loops; endpoints without strict <code>If-None-Match</code> burn quota while nothing happens.</li>
+  <li><strong>Single-pool quota stalls</strong>: When a headless runner is pinned to a single LLM quota bucket, hitting a 429 stalls execution until the 5-hour window resets.</li>
+</ul>
+<p>Our constraint was strict: <strong>$0/month extra infrastructure spend</strong>. Using Cloudflare Workers Free Tier, KV, an isolated <code>cloudflared</code> tunnel, and zero-dependency Python stdlib managed by macOS <code>launchd</code>, we cut wakeup round-trip latency down to <strong>73.8ms</strong> with three self-healing fallback tiers and cross-pool quota failover.</p>
+
+<h2>2. Production Benchmarks: Before vs. After</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Metric</th>
+      <th>Legacy (20s GitHub Polling)</th>
+      <th>V2.0 (3-Tier Resilient Push)</th>
+      <th>Measured Impact</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Delivery Round-Trip</td>
+      <td><code>20s</code> polling interval (<code>0–20s</code>)</td>
+      <td><code>73.8ms</code> HTTPS round-trip</td>
+      <td><code>&lt; 1s</code> end-to-end wakeup</td>
+    </tr>
+    <tr>
+      <td>Idle Check Cost</td>
+      <td>Periodic API queries</td>
+      <td><code>If-None-Match</code> returns <code>304 Not Modified</code></td>
+      <td><code>0</code> KV ops when idle</td>
+    </tr>
+    <tr>
+      <td>Inbox Cleanup</td>
+      <td>Separate delete request</td>
+      <td>Worker clears KV entry on <code>HTTP 200</code></td>
+      <td><code>count: 0</code> zero backlog</td>
+    </tr>
+    <tr>
+      <td>Outage Recovery</td>
+      <td>Manual watcher restart</td>
+      <td>Tier 2 (<code>300s</code> KV) + Tier 3 (<code>900s</code> Issue ETag)</td>
+      <td>Automatic self-healing</td>
+    </tr>
+    <tr>
+      <td>Model Quota Resilience</td>
+      <td>Single-bucket 429 stalls</td>
+      <td><code>3</code> independent quota pools + <code>20</code> min cooldown</td>
+      <td>Uninterrupted headless dispatch</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>3. Three-Tier Self-Healing Bus Architecture</h2>
+<pre><code class="language-text">  [Agent A / Cloud VM]
+         │
+         ▼  POST /send/&lt;node&gt;  (Authorization: Bearer &lt;NODE_TOKEN&gt;)
+┌──────────────────────────────────────────────────────────────────────┐
+│ Tier 1: Cloudflare Worker (mailbox.example.com)                      │
+│   1. Verify sender ACL + secret_like_content filter                  │
+│   2. Inline POST -&gt; https://agent-hook.example.com/push (8s timeout) │
+│      ├─ HTTP 200 OK ──▶ Immediate KV cleanup (zero backlog)          │
+│      └─ Timeout / 5xx ─▶ Persist in Cloudflare KV for Tier 2 drain   │
+└────────────────────────┬─────────────────────────────────────────────┘
+                         │ Isolated Cloudflare Tunnel (QUIC)
+                         ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ Always-On Host (127.0.0.1:18792 via macOS launchd)                   │
+│   - server.py: hmac.compare_digest auth + x-fleet-mailbox-id dedupe  │
+│   - Atomic os.replace -&gt; wake.signal (active chat wakes &lt;= 0.5s)     │
+│   - Headless coalescing queue -&gt; 3-Pool ModelRouter auto-fallback    │
+│                                                                      │
+│ [Tier 2 Every 300s] GET /inbox/&lt;node&gt; (If-None-Match) -&gt; drain + DEL │
+│ [Tier 3 Every 900s] GitHub Comments ETag Watcher (0 quota on 304)    │
+└──────────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h2>4. Runnable Code &amp; Configs (Desensitized)</h2>
+
+<h3>1. Cloudflare Worker: 8s Inline Push with Auto KV Cleanup</h3>
+<pre><code class="language-javascript">// mailbox-worker.js (Cloudflare Workers + KV excerpt)
+const PUSH_TIMEOUT_MS = 8000;
+
+async function deliverOrQueue(env, mailbox, id, msg) {
+  const pushUrl = env[`${mailbox.toUpperCase()}_PUSH_URL`];
+  const pushKey = env[`${mailbox.toUpperCase()}_PUSH_KEY`];
+  if (!pushUrl || !pushKey) {
+    await env.MAILBOX.put(`msg:${mailbox}:${id}`, JSON.stringify(msg), { expirationTtl: 86400 });
+    return { result: 'queued_kv', status: null };
+  }
+
+  try {
+    const res = await fetch(pushUrl, {
+      method: 'POST',
+      redirect: 'manual',
+      signal: AbortSignal.timeout(PUSH_TIMEOUT_MS),
+      headers: {
+        'content-type': 'application/json',
+        'authorization': `Bearer ${pushKey}`,
+        'x-fleet-mailbox-id': id,
+      },
+      body: JSON.stringify(msg),
+    });
+    if (res.ok) {
+      return { result: 'delivered', status: res.status };
+    }
+  } catch (_) {}
+
+  await env.MAILBOX.put(`msg:${mailbox}:${id}`, JSON.stringify(msg), { expirationTtl: 86400 });
+  return { result: 'queued_fallback', status: 502 };
+}</code></pre>
+
+<h3>2. Zero-Dependency Loopback Receiver + Atomic Wake Signal</h3>
+<pre><code class="language-python"># push_receiver.py (Python 3 stdlib only)
+import hmac
+import json
+import os
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+STATE_DIR = Path(os.path.expanduser("~/.agent-receiver/state"))
+PUSH_KEY = Path(os.path.expanduser("~/.secrets/push_key")).read_text(encoding="utf-8").strip()
+SEEN_IDS = set()
+
+class Handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        if self.path != "/push":
+            return self._json(404, {"ok": False, "error": "not_found"})
+        auth = (self.headers.get("Authorization") or "").split(None, 1)
+        if len(auth) != 2 or auth[0].lower() != "bearer" or not hmac.compare_digest(auth[1], PUSH_KEY):
+            return self._json(401, {"ok": False, "error": "unauthorized"})
+
+        length = int(self.headers.get("Content-Length", "0"))
+        if length <= 0 or length > 16384:
+            return self._json(400, {"ok": False, "error": "invalid_payload_size"})
+
+        payload = json.loads(self.rfile.read(length).decode("utf-8"))
+        msg_id = (self.headers.get("x-fleet-mailbox-id") or payload.get("id") or "").strip()
+        if msg_id and msg_id in SEEN_IDS:
+            return self._json(200, {"ok": True, "duplicate": True, "id": msg_id})
+
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = STATE_DIR / "wake.signal.tmp"
+        tmp.write_text(json.dumps(payload, ensure_ascii=False) + "\n", encoding="utf-8")
+        os.replace(tmp, STATE_DIR / "wake.signal")  # atomic swap avoids partial reads
+        if msg_id:
+            SEEN_IDS.add(msg_id)
+        return self._json(200, {"ok": True, "duplicate": False, "id": msg_id})
+
+    def _json(self, status: int, obj: dict):
+        raw = json.dumps(obj).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(raw)))
+        self.end_headers()
+        self.wfile.write(raw)
+
+ThreadingHTTPServer(("127.0.0.1", 18792), Handler).serve_forever()</code></pre>
+
+<h3>3. Isolated Tunnel Config &amp; 10-Second Smoke Verification</h3>
+<pre><code class="language-yaml"># ~/.cloudflared/agent-hook.yml (dedicated UUID isolated from existing tunnels)
+tunnel: 00000000-0000-4000-8000-000000000001
+credentials-file: /Users/&lt;user&gt;/.cloudflared/00000000-0000-4000-8000-000000000001.json
+
+ingress:
+  - hostname: agent-hook.example.com
+    service: http://127.0.0.1:18792
+  - service: http_status:404</code></pre>
+
+<pre><code class="language-bash"># Expect 401 unauthorized -> 200 duplicate:false (73.8ms) -> 200 duplicate:true
+curl -sS -o /dev/null -w "%{http_code}\n" -X POST https://agent-hook.example.com/push -d '{"note":"probe"}'
+
+curl -sS -X POST -H "Authorization: Bearer $(cat ~/.secrets/push_key)" \
+  -H "Content-Type: application/json" -H "x-fleet-mailbox-id: smoke-001" \
+  -d '{"from":"agent-b","note":"smoke"}' https://agent-hook.example.com/push
+
+curl -sS -X POST -H "Authorization: Bearer $(cat ~/.secrets/push_key)" \
+  -H "Content-Type: application/json" -H "x-fleet-mailbox-id: smoke-001" \
+  -d '{"from":"agent-b","note":"smoke"}' https://agent-hook.example.com/push</code></pre>
+
+<h2>5. Three Real Production Pitfalls &amp; Fixes</h2>
+<ol>
+  <li><strong><code>cloudflared tunnel route dns</code> silently attached the CNAME to an older tunnel</strong>: Running <code>cloudflared tunnel route dns &lt;new-name&gt; &lt;host&gt;</code> on a host that already has <code>~/.cloudflared/config.yml</code> reads the old default tunnel ID. Always invoke <code>cloudflared tunnel --config ~/.cloudflared/agent-hook.yml route dns --overwrite-dns &lt;NEW_UUID&gt; &lt;host&gt;</code> explicitly.</li>
+  <li><strong>Cloudflare Edge WAF returned <code>HTTP 403</code> to Python <code>urllib</code></strong>: While Cloudflare Workers and <code>curl</code> immediately saw <code>HTTP 200</code>, default Python <code>urllib.request</code> hit <code>&lt;HTTPError 403: 'Forbidden'&gt;</code>. Standardizing fallback probes on <code>curl</code> with an explicit <code>User-Agent</code> eliminated the discrepancy.</li>
+  <li><strong><code>GIT_EDITOR=false</code> broke headless <code>git rebase --continue</code></strong>: Even with <code>-c core.editor=true</code>, background runners threw <code>error: there was a problem with the editor 'false'</code> because <code>GIT_EDITOR</code> env takes precedence. Injecting <code>env["GIT_EDITOR"] = "true"</code> in the runner subprocess wrapper—and testing against a temporary bare+worker repo conflict—fixed it permanently.</li>
+</ol>
+
+<p>Date: 2026-11-23. Benchmarks measured on PlAIground Lab production infrastructure (desensitized for direct reuse).</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab · INFRA &amp; GPU</p>
+  <p class="housead-title">Buy a local RTX 5090 rig or keep renting cloud GPUs?</p>
+  <p class="housead-body">Compare live street prices on ComputeQuote and calculate your exact break-even week.</p>
+  <a class="housead-link" href="https://computequote.plaigroundlab.com/?utm_source=blog&utm_medium=housead&utm_campaign=computequote">Explore GPU Prices &amp; Payback →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+<script src="/assets/blog-ui.js" defer></script>
+</body>
+</html>

@@ -2,6 +2,10 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [從 20 秒輪詢到 73.8 ms 喚醒：用 $0 Cloudflare Workers＋Tunnel 打造三層容錯通訊網（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-23-three-tier-agent-push-comms/)
+- [From 20s Polling to 73.8ms Push Wakeups: A $0 Three-Tier Self-Healing Agent Bus (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-23-three-tier-agent-push-comms/)
+- [Agent edition, 中文：2026-11-23-three-tier-agent-push-comms](https://blog.plaigroundlab.com/posts/2026-11-23-three-tier-agent-push-comms.agent.md)
+- [Agent edition, English: 2026-11-23-three-tier-agent-push-comms](https://blog.plaigroundlab.com/posts/2026-11-23-three-tier-agent-push-comms.en.agent.md)
 - [交付不算完成：套用並驗證才銷帳（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-23-delivery-not-done/)
 - [Delivery Is Not Done: It Counts Only When Applied and Verified (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-23-delivery-not-done/)
 - [Agent edition, 中文：2026-11-23-delivery-not-done](https://blog.plaigroundlab.com/posts/2026-11-23-delivery-not-done.agent.md)

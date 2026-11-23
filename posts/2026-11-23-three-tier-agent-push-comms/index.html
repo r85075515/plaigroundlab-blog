@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>從 20 秒輪詢到 73.8 ms 喚醒：用 $0 Cloudflare Workers＋Tunnel 打造三層容錯通訊網 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="不花一毛錢加租雲端主機，如何用 Cloudflare Workers KV、獨立 cloudflared Tunnel 與 macOS launchd 建立 73.8 ms 雙向 Push、三層容錯備援與 3-Pool 自動降級機制。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-23-three-tier-agent-push-comms/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-23-three-tier-agent-push-comms/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-23-three-tier-agent-push-comms/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="PlAIground Lab">
+<meta property="og:title" content="從 20 秒輪詢到 73.8 ms 喚醒：打造 $0 三層容錯多 AI 通訊網">
+<meta property="og:description" content="Cloudflare Workers＋獨立 Tunnel＋macOS launchd 實戰：73.8 ms Push、304 Zero-KV-Op 補抽備援、3 個真實生產環境地雷排解。">
+<meta property="og:url" content="https://blog.plaigroundlab.com/posts/2026-11-23-three-tier-agent-push-comms/">
+<meta property="og:image" content="https://blog.plaigroundlab.com/assets/covers/cover-v2-push-comms.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="從 20 秒輪詢到 73.8 ms 喚醒：打造 $0 三層容錯多 AI 通訊網">
+<meta name="twitter:image" content="https://blog.plaigroundlab.com/assets/covers/cover-v2-push-comms.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "從 20 秒輪詢到 73.8 ms 喚醒：用 $0 Cloudflare Workers＋Tunnel 打造三層容錯通訊網",
+  "datePublished": "2026-11-23",
+  "inLanguage": "zh-Hant",
+  "image": "https://blog.plaigroundlab.com/assets/covers/cover-v2-push-comms.png",
+  "url": "https://blog.plaigroundlab.com/posts/2026-11-23-three-tier-agent-push-comms/",
+  "publisher": {
+    "@type": "Organization",
+    "name": "PlAIground Lab",
+    "url": "https://plaigroundlab.com/"
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-23-three-tier-agent-push-comms/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-23">2026-11-23</time></p>
+    <ul class="post-tags"><li>architecture</li><li>cloudflare-workers</li><li>launchd</li><li>multi-agent</li></ul>
+    <h1 class="post-title">從 20 秒輪詢到 73.8 ms 喚醒：用 $0 Cloudflare Workers＋Tunnel 打造三層容錯通訊網</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-v2-push-comms.png" alt="從 20 秒輪詢進化到 73.8 ms 三層容錯 Push 通訊架構圖" width="1600" height="900">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，內含可直接跑的程式碼與驗收指令——<a href="/posts/2026-11-23-three-tier-agent-push-comms.agent.md">中文版</a>・<a href="/posts/2026-11-23-three-tier-agent-push-comms.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>一、為什麼 20 秒輪詢撐不住多 AI 協作？</h2>
+<p>當一個團隊裡有多位常駐雲端 VM 與本機開發機的 AI 代理人協同開發時，早期最容易寫出來的互通方式是「每 20 秒打一次 GitHub Issue Comments API」。跑幾天就會發現三個硬傷：</p>
+<ul>
+  <li><strong>節奏破碎</strong>：雙方一來一往動輒多等 40–60 秒，在需要即時審查 PR、安全確認、測試驗收時體感像慢動作。</li>
+  <li><strong>無效耗損與睡眠掉單</strong>：筆電休眠或暫斷網期間不會自己重放；若忘記設 <code>If-None-Match</code>，閒置期一樣消耗 API 配額。</li>
+  <li><strong>單模型配額一滿就卡住</strong>：背景無頭排程如果綁死單一模型，一旦該配額池見底，整個管線就停擺等 5 小時重置。</li>
+</ul>
+<p>最後我們定下一個嚴格條件：<strong>不加任何雲端付費主機（維持 $0/月）</strong>，把本機接收端改造成 <strong>73.8 ms 即時 Push ＋ 三層自動自癒 ＋ 跨三配額池自動降級</strong> 的常駐匯流排。</p>
+
+<h2>二、改版前後實測數據對比</h2>
+<table>
+  <thead>
+    <tr>
+      <th>評估指標</th>
+      <th>舊架構（20s GitHub API 輪詢）</th>
+      <th>v2.0（三層容錯 Push 匯流排）</th>
+      <th>實測效果</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>單向喚醒延遲</td>
+      <td><code>20s</code> 平均等待（<code>0–20s</code>）</td>
+      <td><code>73.8ms</code>（HTTPS 實測往返）</td>
+      <td>端對端 <code>&lt; 1s</code> 喚醒</td>
+    </tr>
+    <tr>
+      <td>閒置輪詢儲存成本</td>
+      <td>每輪呼叫外部 API</td>
+      <td><code>If-None-Match</code> 命中 <code>304 Not Modified</code></td>
+      <td><code>0</code> KV 操作／<code>0</code> 配額消耗</td>
+    </tr>
+    <tr>
+      <td>推播後信箱清理</td>
+      <td>需另發刪除請求</td>
+      <td>Worker 收到 <code>HTTP 200</code> 當場清除 KV key</td>
+      <td><code>count: 0</code> 零堆積</td>
+    </tr>
+    <tr>
+      <td>Tunnel／邊緣故障自癒</td>
+      <td>需人工重啟腳本</td>
+      <td>Tier 2（<code>300s</code> KV）＋Tier 3（<code>900s</code> Issue ETag）</td>
+      <td>斷線恢復自動接手</td>
+    </tr>
+    <tr>
+      <td>無頭模型配額容錯</td>
+      <td>單一配額池歸零即停擺</td>
+      <td><code>3</code> 組獨立配額池＋<code>20</code> 分鐘冷卻階梯切換</td>
+      <td>跨池不斷線執行</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>三、三層容錯架構圖</h2>
+<pre><code class="language-text">  [Agent A / 雲端 VM]
+         │
+         ▼  POST /send/&lt;node&gt;  (Authorization: Bearer &lt;NODE_TOKEN&gt;)
+┌──────────────────────────────────────────────────────────────────────┐
+│ Tier 1: Cloudflare Worker (mailbox.example.com)                      │
+│   1. 驗證寄件 ACL + secret_like_content 安全攔截                      │
+│   2. 同步 inline POST -&gt; https://agent-hook.example.com/push (8s超時)│
+│      ├─ 收到 HTTP 200 OK ──▶ 不殘留／即刻刪除 KV key                  │
+│      └─ 逾時或非 2xx ──────▶ 寫入 Cloudflare KV 交給 Tier 2 補抽      │
+└────────────────────────┬─────────────────────────────────────────────┘
+                         │ 獨立 Cloudflare Tunnel (QUIC + HTTP/2)
+                         ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ 本機常駐控制器 (127.0.0.1:18792 via macOS launchd)                   │
+│   - server.py: hmac.compare_digest 驗簽 + x-fleet-mailbox-id 去重    │
+│   - 原子 os.replace -&gt; wake.signal（線上對話 &lt;= 0.5s 喚醒）          │
+│   - 無線上對話 -&gt; 單線合併佇列觸發無頭 CLI + 3-Pool Auto-Fallback    │
+│                                                                      │
+│ [Tier 2 每 300s] GET /inbox/&lt;node&gt; (If-None-Match) -&gt; 補抽 + DELETE   │
+│ [Tier 3 每 900s] GitHub Comments ETag Watcher（304 零配額消耗）       │
+└──────────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h2>四、核心程式碼與設定檔（已全面脫敏，可直接取用）</h2>
+
+<h3>1. Cloudflare Worker Inline Push：8 秒逾時＋2xx 不堆積 KV</h3>
+<pre><code class="language-javascript">// mailbox-worker.js（Cloudflare Workers + KV 核心轉發邏輯）
+const PUSH_TIMEOUT_MS = 8000;
+
+async function deliverOrQueue(env, mailbox, id, msg) {
+  const pushUrl = env[`${mailbox.toUpperCase()}_PUSH_URL`];
+  const pushKey = env[`${mailbox.toUpperCase()}_PUSH_KEY`];
+  if (!pushUrl || !pushKey) {
+    await env.MAILBOX.put(`msg:${mailbox}:${id}`, JSON.stringify(msg), { expirationTtl: 86400 });
+    return { result: 'queued_kv', status: null };
+  }
+
+  try {
+    const res = await fetch(pushUrl, {
+      method: 'POST',
+      redirect: 'manual',
+      signal: AbortSignal.timeout(PUSH_TIMEOUT_MS),
+      headers: {
+        'content-type': 'application/json',
+        'authorization': `Bearer ${pushKey}`,
+        'x-fleet-mailbox-id': id,
+      },
+      body: JSON.stringify(msg),
+    });
+    if (res.ok) {
+      return { result: 'delivered', status: res.status };
+    }
+  } catch (_) {}
+
+  await env.MAILBOX.put(`msg:${mailbox}:${id}`, JSON.stringify(msg), { expirationTtl: 86400 });
+  return { result: 'queued_fallback', status: 502 };
+}</code></pre>
+
+<h3>2. 本機零外部套件接收器：常數時間驗簽＋原子信號檔</h3>
+<p>接收器刻意不依賴 FastAPI／Flask 等第三方框架，純用 Python 3 標準函式庫綁定 <code>127.0.0.1:18792</code>，降低供應鏈風險並確保冷啟動毫秒級完成：</p>
+<pre><code class="language-python"># push_receiver.py（Python 3 stdlib only）
+import hmac
+import json
+import os
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+STATE_DIR = Path(os.path.expanduser("~/.agent-receiver/state"))
+PUSH_KEY = Path(os.path.expanduser("~/.secrets/push_key")).read_text(encoding="utf-8").strip()
+SEEN_IDS = set()
+
+class Handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        if self.path != "/push":
+            return self._json(404, {"ok": False, "error": "not_found"})
+        auth = (self.headers.get("Authorization") or "").split(None, 1)
+        if len(auth) != 2 or auth[0].lower() != "bearer" or not hmac.compare_digest(auth[1], PUSH_KEY):
+            return self._json(401, {"ok": False, "error": "unauthorized"})
+
+        length = int(self.headers.get("Content-Length", "0"))
+        if length <= 0 or length > 16384:
+            return self._json(400, {"ok": False, "error": "invalid_payload_size"})
+
+        payload = json.loads(self.rfile.read(length).decode("utf-8"))
+        msg_id = (self.headers.get("x-fleet-mailbox-id") or payload.get("id") or "").strip()
+        if msg_id and msg_id in SEEN_IDS:
+            return self._json(200, {"ok": True, "duplicate": True, "id": msg_id})
+
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = STATE_DIR / "wake.signal.tmp"
+        tmp.write_text(json.dumps(payload, ensure_ascii=False) + "\n", encoding="utf-8")
+        os.replace(tmp, STATE_DIR / "wake.signal")  # 原子替換，避免讀到寫到一半的 JSON
+        if msg_id:
+            SEEN_IDS.add(msg_id)
+        return self._json(200, {"ok": True, "duplicate": False, "id": msg_id})
+
+    def _json(self, status: int, obj: dict):
+        raw = json.dumps(obj).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(raw)))
+        self.end_headers()
+        self.wfile.write(raw)
+
+ThreadingHTTPServer(("127.0.0.1", 18792), Handler).serve_forever()</code></pre>
+
+<h3>3. 獨立 Cloudflare Tunnel 設定與三段快速驗收指令</h3>
+<pre><code class="language-yaml"># ~/.cloudflared/agent-hook.yml（獨立 UUID，與既有 Tunnel 100% 隔離）
+tunnel: 00000000-0000-4000-8000-000000000001
+credentials-file: /Users/&lt;user&gt;/.cloudflared/00000000-0000-4000-8000-000000000001.json
+
+ingress:
+  - hostname: agent-hook.example.com
+    service: http://127.0.0.1:18792
+  - service: http_status:404</code></pre>
+
+<pre><code class="language-bash"># 上線後 10 秒驗收：401 攔截 -&gt; 200 送達 (73.8ms) -&gt; 200 duplicate:true 冪等
+curl -sS -o /dev/null -w "%{http_code}\n" -X POST https://agent-hook.example.com/push -d '{"note":"probe"}'
+
+curl -sS -X POST -H "Authorization: Bearer $(cat ~/.secrets/push_key)" \
+  -H "Content-Type: application/json" -H "x-fleet-mailbox-id: smoke-001" \
+  -d '{"from":"agent-b","note":"smoke"}' https://agent-hook.example.com/push
+
+curl -sS -X POST -H "Authorization: Bearer $(cat ~/.secrets/push_key)" \
+  -H "Content-Type: application/json" -H "x-fleet-mailbox-id: smoke-001" \
+  -d '{"from":"agent-b","note":"smoke"}' https://agent-hook.example.com/push</code></pre>
+
+<h2>五、實際踩過的 3 個地雷（附真實錯誤訊息與解法）</h2>
+<ol>
+  <li><strong><code>cloudflared tunnel route dns</code> 悄悄綁進舊 Tunnel</strong>：在同一台已有預設 <code>~/.cloudflared/config.yml</code> 的機器直接跑 <code>cloudflared tunnel route dns &lt;new-name&gt; &lt;host&gt;</code>，日誌竟印出舊的 <code>tunnelID</code>。解法是強制帶上 <code>--config ~/.cloudflared/agent-hook.yml route dns --overwrite-dns &lt;NEW_UUID&gt; &lt;host&gt;</code>，永遠顯式指定新 UUID。</li>
+  <li><strong>Python <code>urllib</code> 預設 UA 吃到 Cloudflare <code>HTTP 403</code></strong>：剛建置完成時，Cloudflare Workers 與本機 <code>curl</code> 打健康檢查都穩拿 <code>HTTP 200</code>，但 Python <code>urllib.request.urlopen</code> 卻回 <code>&lt;HTTPError 403: 'Forbidden'&gt;</code>。最後將後端探針全面統一改用帶明確 <code>User-Agent</code> 的 <code>curl</code>。</li>
+  <li><strong>背景守護程序 <code>GIT_EDITOR=false</code> 擋死 <code>git rebase --continue</code></strong>：背景自動解狀態檔衝突時，即使指令傳了 <code>-c core.editor=true</code>，仍失敗於 <code>error: there was a problem with the editor 'false'</code>，因為環境變數 <code>GIT_EDITOR</code> 優先權高於 git config。在封裝子行程環境強制注入 <code>env["GIT_EDITOR"] = "true"</code>，並用臨時 bare 倉庫跑真實 rebase 衝突測試後徹底根治。</li>
+</ol>
+
+<p>資料日期：2026-11-23。所有程式碼與數據皆經 PlAIground Lab 實測並完成全面脫敏整理。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab · INFRA &amp; GPU</p>
+  <p class="housead-title">自己買 5090 跑，還是繼續租雲端 GPU？</p>
+  <p class="housead-body">在 ComputeQuote 追蹤即時顯卡街價，並用回本計算機算出幾週買本機開始倒賺。</p>
+  <a class="housead-link" href="https://computequote.plaigroundlab.com/?utm_source=blog&utm_medium=housead&utm_campaign=computequote">查看 GPU 價格與回本試算 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+<script src="/assets/blog-ui.js" defer></script>
+</body>
+</html>
