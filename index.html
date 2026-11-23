@@ -5,6 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Geek Blog — PlAIground Lab</title>
 <meta name="description" content="PlAIground Lab 的 AI 開發筆記：前段故事、後段完整 runbook，還有給你的 AI 讀的版本。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PlAIground Lab">
+<meta property="og:title" content="AI Geek Blog — PlAIground Lab">
+<meta property="og:description" content="PlAIground Lab 的 AI 開發筆記：前段故事、後段完整 runbook，還有給你的 AI 讀的版本。">
+<meta property="og:url" content="https://blog.plaigroundlab.com/">
+<meta property="og:image" content="https://blog.plaigroundlab.com/assets/og-blog.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI Geek Blog — PlAIground Lab">
+<meta name="twitter:description" content="PlAIground Lab 的 AI 開發筆記：前段故事、後段完整 runbook，還有給你的 AI 讀的版本。">
+<meta name="twitter:image" content="https://blog.plaigroundlab.com/assets/og-blog.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  "name": "AI Geek Blog — PlAIground Lab",
+  "url": "https://blog.plaigroundlab.com/",
+  "inLanguage": "zh-Hant",
+  "publisher": {
+    "@type": "Organization",
+    "name": "PlAIground Lab",
+    "url": "https://plaigroundlab.com/"
+  }
+}
+</script>
 <link rel="canonical" href="https://blog.plaigroundlab.com/">
 <link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/">
 <link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/">
@@ -34,6 +61,19 @@
     <h1 class="hero-title">在 AI 上面蓋東西，<br>把坑都記下來。</h1>
     <p class="hero-lede">這是 PlAIground Lab 的工程筆記。每篇前段是故事——發生了什麼、為什麼；後段是完整的技術 runbook，步驟寫到你的 AI 讀了就能照著搭。</p>
   </section>
+  <section class="blog-controls" aria-label="搜尋與篩選">
+    <div class="blog-search-row">
+      <input id="blog-search" class="blog-search-input" type="search" placeholder="搜尋文章標題、關鍵字或技術主題…" aria-label="搜尋文章">
+      <span id="blog-filter-count" class="blog-filter-count"></span>
+    </div>
+    <div class="blog-filter-row" role="group" aria-label="主題分類">
+      <button type="button" class="blog-filter-btn is-active" data-cat="all" aria-pressed="true">全部文章</button>
+      <button type="button" class="blog-filter-btn" data-cat="guides" aria-pressed="false">常青攻略</button>
+      <button type="button" class="blog-filter-btn" data-cat="infra" aria-pressed="false">算力與維運</button>
+      <button type="button" class="blog-filter-btn" data-cat="ai" aria-pressed="false">Agent 與評測</button>
+    </div>
+  </section>
+  <p id="blog-empty" class="blog-empty" hidden>找不到符合關鍵字的文章，試試切換回「全部文章」或輸入其他技術詞彙。</p>
   <section class="postlist" aria-label="常青攻略">
     <h2 class="section-title">常青攻略</h2>
 
@@ -218,6 +258,20 @@
   <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
   <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
 </aside>
+<section class="funnel-strip" aria-label="實用工具與期間限定成品">
+  <div class="funnel-card">
+    <span class="funnel-card-tag">SEASONAL · PET CARD</span>
+    <p class="funnel-card-title">AI 寵物聖誕賀卡</p>
+    <p class="funnel-card-desc">上傳毛孩生活照，訂製專屬聖誕油畫數位卡，送禮收藏一次搞定。</p>
+    <a class="funnel-card-cta" href="https://ideal-type.plaigroundlab.com/pet-card/?utm_source=blog&utm_medium=funnel&utm_campaign=pet-card">看前後對比與訂購 →</a>
+  </div>
+  <div class="funnel-card">
+    <span class="funnel-card-tag">LIVE INDEX · COMPUTEQUOTE</span>
+    <p class="funnel-card-title">GPU 街價與回本追蹤</p>
+    <p class="funnel-card-desc">即時比對各地顯卡價格走勢，算清楚買本機 vs 租雲端何時回本。</p>
+    <a class="funnel-card-cta" href="https://computequote.plaigroundlab.com/?utm_source=blog&utm_medium=funnel&utm_campaign=computequote">查看算力價格 →</a>
+  </div>
+</section>
 </main>
 
 <footer class="familybar">
@@ -246,5 +300,6 @@ try {
   });
 } catch (e) {}
 </script>
+<script src="/assets/blog-ui.js" defer></script>
 </body>
 </html>
