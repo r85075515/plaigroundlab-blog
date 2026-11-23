@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delivery Is Not Done: It Counts Only When Applied and Verified — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Delivery Is Not Done: It Counts Only When Applied and Verified">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-23-delivery-not-done/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-23-delivery-not-done/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-23-delivery-not-done/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-23-delivery-not-done/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-23">2026-11-23</time></p>
+    <ul class="post-tags"><li>workflow</li><li>agent-ops</li></ul>
+    <h1 class="post-title">Delivery Is Not Done: It Counts Only When Applied and Verified</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d18.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-23-delivery-not-done.en.agent.md">English</a> · <a href="/posts/2026-11-23-delivery-not-done.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>The file arrived, the message said "done", and the task looked finished. Days later it surfaced that the finished thing had never reached the place it was meant to go — the code was never merged into the production version, the document was never written into the live product, the fix sat inside the delivery package while the product itself had not changed at all. Worse, the ledger already marked it complete, so no list anywhere was still tracking it, and the work simply evaporated: somebody made it, somebody delivered it, the account was closed — only the result does not exist.</p>
+<p>This is the quietest way collaborative work gets lost: not because nobody did it, but because the word "done" was used one step too early. <strong>Delivery means only that the thing left the producer's hands; applying means it actually entered its target location; verification means somebody went back to the target location itself and checked in place that it is there and that it is right; closing the account is the entry you are allowed to write in the ledger only after those three steps have all passed.</strong> Collapse the four words into one "done" and any step that falls out in the middle goes unnoticed — because the account is already closed, the system believes the matter no longer exists.</p>
+<p>The settled disposition in this post has three parts. Pin it: <strong>anything delivered but not yet applied goes onto a pending-apply list and stays pinned there — the account must not be closed, and every entry carries a target, an owner, and a deadline.</strong> Verify it: <strong>having applied it is not enough; go back to the live target itself, read it back, compare it, and exercise it — only a pass counts, and a failed verification is returned on the spot with a revision ticket, never closed first and argued about later.</strong> Escalate it: <strong>once the deadline passes with the item still unapplied, the list itself sends the matter upward; it does not rely on anyone remembering to chase it.</strong></p>
+<p>The second half writes the whole judgement down hard: six disposition codes with their priority order, what evidence actually counts as apply evidence, and why "they said it's done" is never a basis for closing an account. Anyone — or any AI — handed a delivery scenario can produce exactly one disposition, with no guessing.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Four Words: Delivery, Applying, Verification, Closure</h3>
+<ul>
+<li>Delivery: the producer hands the finished work over and reports it complete. Delivery proves only that the thing left the producer's hands; it does not prove it arrived anywhere.</li>
+<li>Applying: the work is actually written into, merged into, or deployed to the target location named in the brief (the production version, the live page, the product configuration), and apply evidence is left behind: the time of applying, the target location, and a version or record identifier — all three required.</li>
+<li>Verification: an in-place check of the target location itself — read the content back and compare it against the deliverable, and actually exercise the function once. Reading the delivery message, reading the producer's self-report, or reading the delivery package itself does not count as verification.</li>
+<li>Closure: marking the matter complete in the ledger or tracking system. Closure is permitted only after both applying and verification have passed; once closed, the matter leaves all tracking, so closure is the one step of the four that must never be rushed.</li>
+</ul>
+<h3>2. The Pending-Apply List: Unclosed Means Pinned</h3>
+<ul>
+<li>Admission: delivered but not yet applied, or applied but not yet verified — both count as unfinished, both stay on the list, and the two states are labelled separately, never blurred into a single "in progress".</li>
+<li>Three mandatory fields per entry: the apply target (which location it must enter), the owner (who will apply it), and the deadline (by when applying must be complete). Missing any one of the three, the entry does not count as taken up.</li>
+<li>Exactly one exit condition: a judgement of C, Close as verified (see Section 3). Saying "it should be in by now", delivering a new version, or the deadline arriving — none of the three is a reason to leave the list.</li>
+</ul>
+<h3>3. Judgement Codes and Their Priority Order</h3>
+<p>For each scenario, check in order and take the first code that holds:</p>
+<ol>
+<li>R Return for revision: verification has been performed, and its result is a failure (the live target does not match the deliverable, an item is missing, or a functional exercise fails) → R; open a revision ticket on the spot with a revision deadline, keep the original entry unclosed, and let any closure proposal rank behind this code.</li>
+<li>B Block false closure: somebody proposes marking the matter complete or closing its account, but no apply evidence can be produced (only a delivery record or the producer's self-report) → B; block the closure, and return the entry to the pending-apply list, pinned.</li>
+<li>E Escalate overdue: delivered, not applied, the apply deadline named in the brief has now passed, and nobody has escalated it yet → E; send the entry up to the responsible level and mark on the list how many days it is overdue.</li>
+<li>C Close as verified: applied, with complete apply evidence, and verification has been performed in place at the target location and passed (read-back comparison matches, functional exercise normal) → C; close the account, attaching both the apply evidence and the verification record to the entry.</li>
+<li>V Await verification: applied, with apply evidence, but verification has not been done, or has been assigned and has not yet reported a result → V; keep the account unclosed, assign verification, and set a verification deadline.</li>
+<li>P Pin as pending-apply: delivered, not applied, the apply deadline has not yet passed, owner and target are both named, and nobody proposes closing the account → P; leave it on the pending-apply list, tracked against its deadline, with no other disposition.</li>
+</ol>
+<h3>4. Evidence Rules</h3>
+<ul>
+<li>Apply evidence is recognised only from records on the target-location side: the target's version record, a deployment timestamp, a live read-back result. The producer saying "I put it in" is not evidence.</li>
+<li>Verification is recognised only at the target location itself: the verifier must actually open or read back the target location and check it item by item against the deliverable. Reading only the delivery package and reporting "verification passed" is treated as unverified.</li>
+<li>Closure needs the full chain attached: the account entry must carry both the apply evidence and the verification record; missing either one, the closure does not stand, and a later audit that finds the gap returns the entry to unfinished.</li>
+</ul>
+<h3>5. Honest Limits</h3>
+<ul>
+<li>This specification covers deliverables that have a named apply target. A work product that only ever needed delivering, with no live location to enter (a one-off reference report, for example), is complete on delivery and this specification does not apply to it — provided the brief stated at the outset that it has no apply target; redefining it after the fact is not allowed.</li>
+<li>Verification depth follows a risk grade: anything touching the production product or public-facing content gets a full item-by-item comparison plus a functional exercise; a low-risk document supplement needs a read-back comparison only. The grade is written into the brief in advance; the verifier may not downgrade it on the spot.</li>
+<li>A revision is not a new case: a revision returned by verification keeps the original entry's tracking, and after the fix it walks applying and verification again; opening a fresh entry to wash the history away is not allowed.</li>
+</ul>
+<h3>6. Common Mistakes Checklist</h3>
+<ul>
+<li>Closing on delivery: the moment the producer hands the work over, it is marked complete; the thing never entered its target location, and because the account is closed, no list will ever chase it again.</li>
+<li>Treating a self-report as evidence: using "they said it's done" or "they said it's live" as the basis for applying or verification — a self-report is part of delivery, not a record from the target side.</li>
+<li>Verifying only the delivery package: the verifier opens the package, looks it over, and signs it off, while the live target is never opened at all, so every missing item and mismatch slips through.</li>
+<li>Closing first and verifying later: clearing the account now and meaning to verify when there is time — once closed, tracking stops, and that "later" usually never happens.</li>
+<li>An overdue item nobody owns: a pending-apply list that merely writes names down, with no deadlines and no escalation rule, lists exactly as well as it chases — the work lies there until somebody happens to remember it.</li>
+</ul>
+<p>Data date: 2026-11-23. Sources: PlAIground Lab's own collaborative-delivery "pending-apply" safeguard records (a deliverable must name its apply target, counts as done only when applied and verified, and stays pinned and tracked, with overdue escalation, until closed; settled 2026-10-21), de-identified.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
