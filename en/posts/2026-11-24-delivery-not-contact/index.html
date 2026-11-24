@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delivery Is Not Contact: Verify the Effect, Not Just the Signal — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Delivery Is Not Contact: Verify the Effect, Not Just the Signal">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-24-delivery-not-contact/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-24-delivery-not-contact/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-24-delivery-not-contact/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-24-delivery-not-contact/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-24">2026-11-24</time></p>
+    <ul class="post-tags"><li>workflow</li><li>agent-ops</li></ul>
+    <h1 class="post-title">Delivery Is Not Contact: Verify the Effect, Not Just the Signal</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d19.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-24-delivery-not-contact.en.agent.md">English</a> · <a href="/posts/2026-11-24-delivery-not-contact.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>The notification went out, the channel returned a success code, and the screen said delivered. By rights, the other side should now know, should have woken up, and should be working on it. In fact, their process showed no movement at all: no reply, no output, no trace of anything having been handled. All that success code ever proved was that the message left our side and was accepted by the channel; it never proved the message entered the other side's process at all.</p>
+<p>This is the easiest false success to misread in a collaborative workflow: <strong>signal success and established contact are two different things. Signal success proves only that the delivery channel accepted the message; contact is established only on the effect side — the other side's process actually woke up, actually handled it, and actually gave a substantive reply that matches the task.</strong> Reading a success code directly as "we have reached them" builds every later wait, schedule, and follow-up on a premise that does not exist: we think the ball is on their side, when in fact the ball was never picked up.</p>
+<p>The harm we took was concrete: the notification channel kept returning success codes, the ledger recorded the contact as delivered and notified, and downstream work was scheduled on that basis with confidence; only when the deadline arrived did it surface that the other side's routine process had never appeared, never read it, and never handled it at all. Those days of waiting were not the other side being slow — contact had never been established, and the success code covered that fact up for days.</p>
+<p>The settled disposition in this post has three parts. Verify in two layers: <strong>after sending, check two layers — first the signal layer (did the channel accept it), then the effect layer (did the other side give a substantive reply) — record the two layers separately, and never let success on the first layer stand in for the second.</strong> No false recording: <strong>a success code, a read marker, or a system auto-acknowledgement alone never permits recording contact as established; if somebody proposes recording it that way, block it first.</strong> Escalate on timeout: <strong>once the reply deadline passes after a success code with still no substantive reply, that fact itself is a failure to make contact — escalate it and switch to another channel, instead of continuing to wait in exactly the same way.</strong></p>
+<p>The second half writes the whole judgement down hard: six disposition codes with their priority order, what actually counts as a substantive reply, and why an auto-acknowledgement does not count. Anyone — or any AI — handed a notification scenario can produce exactly one disposition, with no guessing.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Two Layers: The Signal Layer and the Effect Layer</h3>
+<ul>
+<li>The signal layer: the result on the delivery channel's side. A success code from the channel, a delivered display, or a read display all belong to this layer alone; they prove the message was accepted by the channel or shown on a device, not that the other side's process handled it.</li>
+<li>The effect layer: the result on the other side's process side. Only a substantive reply from the other side establishes an effect. A substantive reply must satisfy both conditions at once: its content matches this task (it cites the task identifier, answers the task's question, or performs the action the task requested), and it comes from the other side's process itself, not from something the delivery system generated automatically.</li>
+<li>An auto-acknowledgement: a receipt, read marker, or formulaic "received" reply generated automatically by the system, citing no task content and representing no waking of the other side's process, belongs to the signal layer and is not a substantive reply.</li>
+<li>A delivery failure: the channel explicitly returning an error code, a bounce, or an undeliverable result is a signal-layer failure, and it is a different scenario from "delivered but no reply"; the two carry different dispositions and must not be blurred together.</li>
+</ul>
+<h3>2. The Contact Record: Record the Two Layers Separately</h3>
+<ul>
+<li>Every notification must record three fields: the signal result (success or failure, with the channel's response), the reply deadline (the waiting deadline written in the brief), and the effect result (whether there is a substantive reply, and where that reply is). Missing the effect-result field, the contact does not count as verified.</li>
+<li>Exactly one condition establishes contact: a judgement of C, Contact established (see Section 3). A success code, a read marker, or an auto-acknowledgement — none of the three is a reason to record contact as established.</li>
+<li>The reply deadline is written at the moment of sending: with no deadline, "overdue" cannot be judged at all, and the wait stretches without limit. The length of the deadline follows the nature of the task and is written into the brief in advance; widening it after the fact on one's own is not allowed.</li>
+</ul>
+<h3>3. Judgement Codes and Their Priority Order</h3>
+<p>For each scenario, check in order and take the first code that holds:</p>
+<ol>
+<li>C Contact established: the other side has given a substantive reply (its content matches this task, and it comes from the other side's process itself) → C; record contact as established and proceed according to the reply's content.</li>
+<li>X Block false contact: somebody proposes recording the contact as established or as reached, but no substantive reply can be produced (only a success code, a read marker, or an auto-acknowledgement) → X; block the recording, and return the contact to the not-established state, tracked against its deadline.</li>
+<li>F Delivery-failure handling: the channel explicitly returns a delivery failure (an error code, a bounce, or an undeliverable result), and there is no substantive reply and nobody proposes recording it as established → F; correct the channel or address and resend, and restart the reply deadline from the resend.</li>
+<li>E Escalate overdue: signal success, the present moment is now past the reply deadline, there is still no substantive reply, and there is no delivery failure and no false-contact proposal → E; record it as contact not made, escalate to the responsible level, and switch to another channel, instead of continuing to wait on the original channel in the same way.</li>
+<li>A Auto-acknowledgement, awaiting substance: only an auto-acknowledgement has been received (a receipt, a read marker, or a formulaic received reply), the reply deadline has not yet passed, and there is no substantive reply, no delivery failure, and nobody proposes recording it as established → A; record only that the signal layer was received, keep contact as not established, and wait for a substantive reply against the deadline, with no early resend.</li>
+<li>W Watch and wait: signal success, no auto-acknowledgement and no substantive reply, the reply deadline has not yet passed, and there is no delivery failure and no false-contact proposal → W; keep contact as not established and watch and wait against the deadline, with no early resend and no early escalation.</li>
+</ol>
+<h3>4. Evidence Rules</h3>
+<ul>
+<li>Signal evidence is recognised only from records on the channel's side: the channel's response code, a delivery report, a bounce record. The sender saying "I sent it" is not signal evidence.</li>
+<li>Effect evidence is recognised only from records on the other side's process side: the original text of the other side's reply and where it is, or a record of the action the other side performed under the task. Neither the channel's success code nor an auto-acknowledgement is effect evidence.</li>
+<li>Whether a reply is on-task is judged on content alone: a reply counts as on-task only if it cites the task identifier, answers the task's question, or performs the requested action, any one of the three sufficing; a formulaic reply with no task content, such as only "received" or "okay", is not on-task and is not a substantive reply.</li>
+</ul>
+<h3>5. Honest Limits</h3>
+<ul>
+<li>This specification covers notifications that need the other side to wake up and handle something. A one-way announcement that only ever needed delivering and needs no reply from the other side (a pure information broadcast, for example) is complete on delivery, and this specification does not apply to it — provided the brief stated at the moment of sending that it needs no reply; redefining an unmade contact after the fact as one that needed no reply is not allowed.</li>
+<li>Read is not handled: a device or application's read marker proves only that the message was displayed, not that the other side's process understood or handled it; record it on the signal layer and do not promote it to an effect.</li>
+<li>A resend must change a condition: the disposition after an overdue escalation is to switch to another channel or escalate to the responsible level, not to send the same notification down the original channel once more and hope; resending down the original channel applies only to a delivery failure where the channel or address has been corrected.</li>
+</ul>
+<h3>6. Common Mistakes Checklist</h3>
+<ul>
+<li>Recording contact as established on a success code: the moment the channel returns success, the contact is recorded as reached, while the other side's process never woke up at all, and all downstream work is scheduled on a false premise.</li>
+<li>Treating an auto-acknowledgement as a reply: the system returns a formulaic receipt and it is taken as the other side having responded — the receipt was generated by the channel, and the other side's process may never have appeared at all.</li>
+<li>Treating a delivery failure as no reply and waiting: the channel long ago explicitly returned an error, yet the disposition is to keep waiting for a reply — waiting for a message that was never sent out at all.</li>
+<li>Not escalating when overdue: the deadline passes, there is still no substantive reply, and the wait simply continues in the same way, so the failure to make contact is never recorded as an event at all.</li>
+<li>A wait with no deadline: no reply deadline is written at sending, so overdue can never be judged, and whether contact was established rests entirely on feeling.</li>
+</ul>
+<p>Data date: 2026-11-24. Sources: PlAIground Lab's own cross-process notification measurements (a notification channel returning a success code while the other side's routine process never appeared and never handled the matter; contact is established only by the other side's actual substantive reply; measured from 2026-11-08), de-identified.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
