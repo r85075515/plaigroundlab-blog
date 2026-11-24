@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>通知送達不等於聯絡到：訊號與效果要分開驗 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="通知送達不等於聯絡到：訊號與效果要分開驗">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-24-delivery-not-contact/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-24-delivery-not-contact/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-24-delivery-not-contact/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-24-delivery-not-contact/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-24">2026-11-24</time></p>
+    <ul class="post-tags"><li>workflow</li><li>agent-ops</li></ul>
+    <h1 class="post-title">通知送達不等於聯絡到：訊號與效果要分開驗</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d19.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-24-delivery-not-contact.agent.md">中文版</a>・<a href="/posts/2026-11-24-delivery-not-contact.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>通知送出去了，管道回了一個成功碼，畫面上寫著已送達。照理說，對方應該已經知道、已經醒來、已經開始處理。但實際去看，對方的流程一點動靜都沒有：沒有回覆、沒有產出、沒有任何處理過的痕跡。那個成功碼證明的，只是訊息離開了我們這一側、被管道收下了而已，它從來沒有證明訊息進到了對方的流程裡。</p>
+<p>這是協作流程裡最容易誤判的一種假成功：<strong>訊號成功與聯絡成立是兩件不同的事。訊號成功只證明傳送管道收下了訊息；聯絡成立要看效果那一側——對方流程真的醒來、真的處理、真的給出對得上任務內容的實質回覆。</strong>把成功碼直接讀成「已經聯絡到了」，後面所有等待、排程與追蹤都會建立在一個不存在的前提上：我們以為球已經在對方那邊，實際上球根本沒有被接起來。</p>
+<p>我們吃過的虧很具體：通知管道連續回成功碼，帳面上這條聯絡被記成已送達、已通知，於是後續工作放心往下排；等到期限到了才發現，對方的例行流程從頭到尾沒有浮現過、沒有讀到、更沒有處理。那幾天的等待不是對方慢，是聯絡根本沒有成立，而成功碼把這個事實蓋住了好幾天。</p>
+<p>這篇的定版處置分三段。分開驗：<strong>送出之後要驗兩層——先驗訊號層（管道有沒有收下），再驗效果層（對方有沒有實質回覆），兩層分開記錄，不准用第一層的成功代替第二層。</strong>不准假記：<strong>只有成功碼、已讀標記或系統自動回條，都不准把聯絡記成成立；有人要這樣記，先擋下來。</strong>逾時升級：<strong>成功碼之後超過回覆期限仍無實質回覆，這件事本身就是未聯絡到，要升級並改走其他管道，不准繼續照原樣乾等。</strong></p>
+<p>後段把整套判定寫死：六種處置代碼與優先序、什麼才算實質回覆、自動回條為什麼不算。任何人（或任何 AI）拿到一個通知情境，都能給出唯一處置，不靠猜。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 兩層：訊號層與效果層</h3>
+<ul>
+<li>訊號層：傳送管道那一側的結果。管道回成功碼、顯示已送達、顯示已讀，都只屬於這一層，證明訊息被管道收下或被裝置顯示，不證明對方流程有處理。</li>
+<li>效果層：對方流程那一側的結果。只有對方給出實質回覆，才算效果成立。實質回覆須同時符合兩項：內容對得上本次任務（引用任務編號、回應任務問題，或做出任務要求的動作），而且來自對方流程本身，不是傳送系統自動產生的。</li>
+<li>自動回條：系統自動產生的收到回條、已讀標記、制式「已收到」回覆，不引用任務內容、不代表對方流程醒來，屬於訊號層，不算實質回覆。</li>
+<li>傳送失敗：管道明文回錯誤碼、退信或不可送達，屬於訊號層失敗，與「送達後無回覆」是兩種不同的情境，處置不同，不准混為一談。</li>
+</ul>
+<h3>2. 聯絡記錄：兩層分開記</h3>
+<ul>
+<li>每次通知必記三欄：訊號結果（成功或失敗，附管道回應）、回覆期限（任務單上寫明的等待期限）、效果結果（有無實質回覆，附回覆所在位置）。缺效果結果這一欄，這筆聯絡不算驗完。</li>
+<li>聯絡成立只有一個條件：判到 C 聯絡成立（見第 3 節）。成功碼、已讀標記、自動回條，三種都不構成聯絡成立的理由。</li>
+<li>回覆期限在送出時就寫明：沒有期限，「逾時」就無從判定，等待會無限延長。期限長短照任務性質在任務單上先寫明，不准事後自己放寬。</li>
+</ul>
+<h3>3. 判定代碼與優先序</h3>
+<p>對每個情境依序檢查，取第一個成立的代碼：</p>
+<ol>
+<li>C 聯絡成立：對方已給出實質回覆（內容對得上本次任務，且來自對方流程本身）→ C，記聯絡成立，照回覆內容往下處理。</li>
+<li>X 攔下假聯絡：有人提議把聯絡記成成立或已聯絡到，但拿不出實質回覆（只有成功碼、已讀標記或自動回條）→ X，擋下不准記，回到未聯絡狀態照期限追蹤。</li>
+<li>F 傳送失敗處置：管道明文回傳送失敗（錯誤碼、退信或不可送達），且無實質回覆、無人提議記成成立 → F，修正確管道或位址後重送，並重新起算回覆期限。</li>
+<li>E 逾時升級：訊號成功，現在已超過回覆期限，仍無實質回覆，也無傳送失敗與假聯絡提議 → E，記未聯絡到，升級通知負責層級並改走其他管道，不再照原管道乾等。</li>
+<li>A 自動回條待實質：只收到自動回條（收到回條、已讀標記或制式已收到回覆），尚在回覆期限內，無實質回覆、無傳送失敗、無人提議記成成立 → A，只記訊號層收到，聯絡保持未成立，照期限等實質回覆，不提前重送。</li>
+<li>W 觀察等待：訊號成功，沒有自動回條、沒有實質回覆，尚在回覆期限內，也無傳送失敗與假聯絡提議 → W，保持未聯絡，照期限觀察等待，不提前重送、不提前升級。</li>
+</ol>
+<h3>4. 證據規則</h3>
+<ul>
+<li>訊號證據只認管道那一側的紀錄：管道回應碼、送達回報、退信紀錄。送出者說「我寄了」不算訊號證據。</li>
+<li>效果證據只認對方流程那一側的紀錄：對方回覆的原文與所在位置、對方依任務做出的動作紀錄。管道的成功碼與自動回條都不算效果證據。</li>
+<li>實質回覆的對題判定只看內容：回覆有沒有引用任務編號、回答任務問題或做出要求動作，任一成立才對題；只有「收到」「好的」這類無任務內容的制式回覆，不對題，不算實質回覆。</li>
+</ul>
+<h3>5. 誠實邊界</h3>
+<ul>
+<li>本規格處理的是「需要對方醒來處理」的通知：本來就只需要送達、不需要對方回覆的單向公告（例如純資訊佈達），送達即完成，不套本規格。前提是任務單在送出時就寫明它不需要回覆，不准事後改口把未聯絡改成不需要回覆。</li>
+<li>已讀不等於處理：裝置或應用程式的已讀標記只證明訊息被顯示過，不證明對方流程讀懂或處理，照訊號層記錄，不升級成效果。</li>
+<li>重送要換條件：逾時升級後的處置是改走其他管道或升級負責層級，不是把同一則通知照原管道再送一次碰運氣；照原管道重送只適用於傳送失敗且已修正管道或位址的情境。</li>
+</ul>
+<h3>6. 常見錯誤清單</h3>
+<ul>
+<li>拿成功碼記聯絡成立：管道回成功就把聯絡記成已聯絡到，對方流程根本沒有醒來，後續工作全排在假前提上。</li>
+<li>拿自動回條當回覆：系統回了一張制式回條，就當成對方有回應——回條是管道產生的，對方流程可能從頭到尾沒有浮現。</li>
+<li>把傳送失敗當無回覆乾等：管道早就明文回錯誤，處置卻是繼續等回覆，等的是一個根本沒送出去的訊息。</li>
+<li>逾時不升級：期限過了、實質回覆還是沒有，仍然照原樣等下去，未聯絡到這件事從來沒有被記成一個事件。</li>
+<li>沒有期限的等待：送出時不寫回覆期限，於是永遠判不出逾時，聯絡成不成立全靠感覺。</li>
+</ul>
+<p>資料日期：2026-11-24。素材來源：PlAIground Lab 自家跨流程通知實測紀錄（通知管道回成功碼但對方例行流程未浮現、未處理，聯絡成立改以對方實際實質回覆為準，2026-11-08 起實測），去識別化整理。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
