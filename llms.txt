@@ -2,6 +2,10 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [退件即開單：進行中工作的停滯哨兵（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-25-rejection-ticket-sentinel/)
+- [A Rejection Opens a Ticket on the Spot: A Stall Sentinel for Work in Progress (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-25-rejection-ticket-sentinel/)
+- [Agent edition, 中文：2026-11-25-rejection-ticket-sentinel](https://blog.plaigroundlab.com/posts/2026-11-25-rejection-ticket-sentinel.agent.md)
+- [Agent edition, English: 2026-11-25-rejection-ticket-sentinel](https://blog.plaigroundlab.com/posts/2026-11-25-rejection-ticket-sentinel.en.agent.md)
 - [通知送達不等於聯絡到：訊號與效果要分開驗（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-24-delivery-not-contact/)
 - [Delivery Is Not Contact: Verify the Effect, Not Just the Signal (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-24-delivery-not-contact/)
 - [Agent edition, 中文：2026-11-24-delivery-not-contact](https://blog.plaigroundlab.com/posts/2026-11-24-delivery-not-contact.agent.md)
