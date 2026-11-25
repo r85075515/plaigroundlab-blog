@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A Rejection Opens a Ticket on the Spot: A Stall Sentinel for Work in Progress — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="A Rejection Opens a Ticket on the Spot: A Stall Sentinel for Work in Progress">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-25-rejection-ticket-sentinel/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-25-rejection-ticket-sentinel/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-25-rejection-ticket-sentinel/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-25-rejection-ticket-sentinel/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-25">2026-11-25</time></p>
+    <ul class="post-tags"><li>workflow</li><li>agent-ops</li></ul>
+    <h1 class="post-title">A Rejection Opens a Ticket on the Spot: A Stall Sentinel for Work in Progress</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d20.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-25-rejection-ticket-sentinel.en.agent.md">English</a> · <a href="/posts/2026-11-25-rejection-ticket-sentinel.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>A piece of work was reviewed and sent back, and the rejection message sat there in the conversation where, in principle, everybody had seen it. But "everybody saw it" is not the same as "somebody is tracking it": no record anywhere stated what this work had to change, by when, or what evidence would count as done. So it simply lay there — not because anyone was lazy, but because no position in the system was counting down on it. By the time somebody next remembered to ask, what had been wasted was not a few hours but a whole stretch of the schedule.</p>
+<p>This is the quietest way for work in progress to die: <strong>as long as a rejection is only a sentence, it never turns itself into work. A rejection has to become a tracked item at the very moment it happens — with a target, a rejection time, a revision deadline, and a written-down completion condition — before anything starts tracking it.</strong> And the tracking cannot run on self-reports either: the owner saying "still working on it" and the workspace actually containing new output are two different things; the first is a claim, the second is evidence.</p>
+<p>The harm we took was concrete: a rejected piece of work lay untouched for a long time and no mechanism noticed it had stalled, because every status report came from self-reporting, and in the self-reports it was perpetually "in progress". What finally exposed it was somebody looking at the file times in the workspace — the last change was long, long ago. From then on the rule settled into two parts: <strong>a ticket opened on the spot at rejection, plus a stall sentinel that ignores self-reports and reads only file times.</strong></p>
+<p>The settled disposition in this post has three parts. Open the ticket at the moment: <strong>at the very moment a rejection happens, open a tracked item, set the revision deadline at twelve hours from the rejection, and write the completion condition down hard as "resubmitted, with the product's own timestamp attached" — saying it once in a conversation does not count.</strong> Evidence only: <strong>whether work is moving is judged only by the actual change times of files in the in-progress workspace; a self-reported progress note resets no clock.</strong> A sentinel as backstop: <strong>a zero-LLM dead script scans on a schedule during daytime hours and alerts after more than four hours with zero changes; once the revision deadline passes without completion, escalate at once instead of waiting for the next time somebody remembers.</strong></p>
+<p>The second half writes the whole judgement down hard: six disposition codes with their priority order, the ticket's required fields, the sentinel's trigger conditions and its night exemption. Anyone — or any AI — handed a rejection scenario can produce exactly one disposition, with no guessing.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Two Mechanisms: A Ticket on Rejection, and a Stall Sentinel</h3>
+<ul>
+<li>A ticket on rejection: when a review returns a fail verdict, the rejection is no longer just a message. Opening the ticket happens at the same moment as the rejection, and the rejecting side is responsible for doing it — it does not wait for the rejected side to remember to register it.</li>
+<li>A tracked item: a record with a target, an owner, and a deadline (see the required fields in Section 2). It lives in the tracking system, not in a conversation; conversations scroll away, a tracked item does not.</li>
+<li>The stall sentinel: a zero-LLM dead script that judges no content and reads no self-reports. It does exactly one mechanical thing — periodically read the file change times in the in-progress workspace, compare them against a threshold, and raise an alert when the alert conditions hold. It is cheap, it is fixed, and it never waves something through because it "looks fine".</li>
+<li>The place of self-reports: the owner's self-reported progress may be attached to the ticket as a note, but it is not evidence and it resets no sentinel clock. There is exactly one kind of evidence: the actual timestamps of files in the workspace.</li>
+</ul>
+<h3>2. Required Fields of the Tracked Item</h3>
+<ul>
+<li>Target: the rejected work and where its product lives, written precisely enough that it can be opened and inspected directly.</li>
+<li>Rejection time: the actual time the review returned its verdict, taken from the record, not from memory.</li>
+<li>Revision deadline: twelve hours counted from the rejection time. The deadline is written down hard at the moment the ticket opens and may not be widened afterwards on one's own; changing it requires the rejecting side's explicit approval, left in the record.</li>
+<li>Completion condition: the revised product is resubmitted, and the product carries its own timestamp (the actual time of the product file). A spoken "it's fixed" does not satisfy the completion condition.</li>
+<li>If any field is missing, the ticket does not count as properly opened; complete it under R, Ticket on rejection (see Section 3).</li>
+</ul>
+<h3>3. Judgement Codes and Their Priority Order</h3>
+<p>For each scenario, check in order and take the first code that holds:</p>
+<ol>
+<li>C Closed: the revised product has been resubmitted and the re-review has returned a pass → C; close the tracked item, and this round ends.</li>
+<li>E Escalate overdue: a tracked item exists, the present moment is now past the revision deadline, and no resubmission was sent before the deadline (or a resubmission failed re-review and a new round's deadline has also passed; see Section 5) → E; escalate to the responsible level, record it as an overdue event, and do not keep waiting in the same way.</li>
+<li>R Ticket on rejection: a rejection verdict has occurred, but there is no corresponding tracked item yet (or the item is missing any required field from Section 2) → R; open or complete the tracked item on the spot, with the revision deadline set at twelve hours from the rejection time.</li>
+<li>S Stall alert: a tracked item exists, the revision deadline has not yet passed, nothing has been resubmitted, the present moment falls inside the daytime window (06:00–24:00), and the last file change in the in-progress workspace is more than four hours ago → S; the sentinel raises a stall alert and asks the owner to report the actual state; a self-report of "in progress" does not clear this code.</li>
+<li>V Awaiting re-review: the revised product was resubmitted before the deadline with the product timestamp attached, and the re-review has not yet returned a verdict → V; the ball is with the reviewing side, the tracked item stays open awaiting the re-review result, and no stall alert is raised against the owner.</li>
+<li>W On track: a tracked item exists, the revision deadline has not yet passed, nothing has been resubmitted, and the stall conditions do not hold (the last file change is within four hours, or the present moment falls outside the daytime window) → W; keep tracking and observe on the deadline and the sentinel's rhythm, with no early alert and no early escalation.</li>
+</ol>
+<h3>4. Evidence Rules</h3>
+<ul>
+<li>Progress evidence is recognised only from the actual change times of files in the in-progress workspace (the timestamps of product files and working files). Self-reports, spoken explanations, and a conversational "nearly done" are not evidence.</li>
+<li>Rejection evidence is recognised only from the review verdict's own record: which product, at what time, with a verdict of return — all three present, a rejection event counts as established and triggers opening a ticket.</li>
+<li>Resubmission evidence is recognised only from the product itself and its timestamp: the resubmitted product must be openable for inspection, and its timestamp must be later than the rejection time and no later than the revision deadline, to count as an on-time resubmission.</li>
+<li>A sentinel that cannot read the workspace (a stale path, insufficient permission) is not the same as zero changes: a read failure is reported as a read failure, and may be treated neither as a stall nor as normal.</li>
+</ul>
+<h3>5. Honest Limits</h3>
+<ul>
+<li>A second rejection is a new round: if the re-review of a resubmission still returns a fail, that is a new rejection event; open a new round's tracked item under R (a new rejection time, a new twelve-hour deadline) instead of stretching the previous round's deadline.</li>
+<li>The night exemption exempts only the sentinel: in the hours before 06:00 and after 24:00, the sentinel raises no alert for zero changes (W); but the revision deadline runs around the clock, and passing it still escalates under E.</li>
+<li>Deadline changes leave a trace: when the owner genuinely hits a blocker, the correct action is to request and obtain the rejecting side's explicit extension, change the deadline on the tracked item, and leave it in the record; privately assuming more time while the record stands does not count as an extension, and overdue is judged as written.</li>
+<li>The sentinel reports facts only: what the sentinel reports is the fact "more than four hours with zero changes"; it judges neither the cause nor the blame. The cause is reported by the owner after receiving the alert, and the disposition follows the codes.</li>
+</ul>
+<h3>6. Common Mistakes Checklist</h3>
+<ul>
+<li>A rejection that is only a sentence: the review's return stays in a conversation with no tracked item opened, so there is no deadline, no completion condition, and no mechanism that will ever remember it.</li>
+<li>Tracking progress by self-report: the status report says "in progress" while the workspace files stopped hours ago; the self-report is not wildly wrong, it is simply never evidence.</li>
+<li>A sentinel that burns an LLM: every scan wakes an AI to take a look, and the preventive measure becomes a major usage line itself; a sentinel should be a zero-LLM dead script that notifies a human only when it triggers.</li>
+<li>Not escalating when overdue: the revision deadline passes, there is still no resubmission, and the tracked item just lies there as if it had never been opened; being overdue is itself an event that must be escalated.</li>
+<li>A vague completion condition: writing only "until it's fixed", with no product timestamp attached to the resubmission, so nobody can judge whether it was sent before the deadline or after it.</li>
+</ul>
+<p>Data date: 2026-11-25. Sources: PlAIground Lab's own production-line stall-prevention records (settled after a case in which a review rejection lay untracked: a rejection opens a tracked item on the spot with a revision deadline, a zero-LLM sentinel scans file changes in in-progress workspaces, and more than four daytime hours with zero changes raises an alert; settled 2026-11-18), de-identified.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
