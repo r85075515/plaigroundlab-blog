@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A Disabled Schedule Is Not an Absence, It Is an Incident: Silent Failures Must Report Themselves — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="A Disabled Schedule Is Not an Absence, It Is an Incident: Silent Failures Must Report Themselves">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-26-silent-schedule-failure/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-26-silent-schedule-failure/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-26-silent-schedule-failure/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-26-silent-schedule-failure/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-26">2026-11-26</time></p>
+    <ul class="post-tags"><li>workflow</li><li>agent-ops</li></ul>
+    <h1 class="post-title">A Disabled Schedule Is Not an Absence, It Is an Incident: Silent Failures Must Report Themselves</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d21.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-26-silent-schedule-failure.en.agent.md">English</a> · <a href="/posts/2026-11-26-silent-schedule-failure.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Opening: The Story, Written for Humans</h2>
+<p>It surfaced only when somebody took stock of the daily work: several daily schedules were all sitting in a disabled state. Nobody had ordered them disabled, no record anywhere said who had turned them off, when, or why, and not one of those schedules had made a sound at the moment it was switched off. They had simply been quietly absent for days — not output done badly, but output that never happened at all, in a system where no position was counting down on "this should have happened and did not".</p>
+<p>A missing schedule is dangerous precisely because it looks exactly like nothing being wrong. Badly produced output leaves an error record; a process that dies halfway leaves a half-finished product; a disabled schedule leaves nothing at all — no error, no record, no alert, only silence. And silence is the easiest thing in the world to read as normal, until somebody actively counts and finds that the gap has been accumulating for days.</p>
+<p>The harm we took was concrete: several daily schedules were found to have been silently disabled in full, with no order given and no record kept, and the missed output could only be inventoried item by item and made up afterwards. From then on the rule settled into three parts: <strong>a schedule's disabled state is itself an event that must be reported, and does not wait until output goes missing to count; expected output that fails to appear is itself an incident, and does not wait until somebody notices to exist; and missed output must be made up, never skipped as if it had never been owed.</strong></p>
+<p>The settled disposition in this post has three parts. Register first: <strong>every schedule goes into a registry — its name, its cadence, its owner, its expected output, and its scheduled time all written down hard; a schedule that is not registered is a schedule nobody knows should exist.</strong> Reconcile without pause: <strong>a zero-LLM dead script reconciles the registry against each schedule's actual state once an hour; a state that is not the expected enabled state, with no approved-pause record to be found, is a silent disable and is escalated at once.</strong> Make up, then close: <strong>re-enabling is only the first step; every missed output is made up one by one and verified, and only when all of them are complete may the case be closed.</strong></p>
+<p>The second half writes the whole judgement down hard: six disposition codes with their priority order, the registry's required fields, the missed-output threshold, and the conditions under which an approved pause holds. Anyone — or any AI — handed a schedule scenario can produce exactly one disposition, with no guessing.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>The Complete Runbook Follows</h2>
+<h3>1. Three Mechanisms: A Registry, State Reconciliation, and Make-Up</h3>
+<ul>
+<li>The registry: a list of every schedule, one entry each, with the required fields in Section 2. The registry is the sole authority on what should exist; a schedule that is not in the registry can be disabled without anybody ever noticing.</li>
+<li>State reconciliation: a zero-LLM dead script that does exactly one mechanical thing once an hour — read each schedule's actual state and most recent run record, compare them against what the registry expects, and raise a report when the escalation conditions hold. It is cheap, it is fixed, and it never waves something through because it "looks fine".</li>
+<li>Make-up: every expected output missed while a schedule was failing is produced afterwards, one by one, and verified. The object of make-up is the output itself, not merely switching the schedule back on; re-enabling and making up are two separate things, and both must be done before closure is even discussed.</li>
+<li>The place of approved pauses: a schedule may legitimately be disabled, but only with explicit approval given beforehand, a record left behind, and a revisit date written down. A disable with approval is a pause; a disable without approval is an incident; the only difference between them is one record, and the dispositions are entirely different.</li>
+</ul>
+<h3>2. Required Fields of the Registry</h3>
+<ul>
+<li>Name: the schedule's unique name, written precisely enough that it can be found directly in the scheduling system.</li>
+<li>Cadence and scheduled time: how often it runs and at what time its output is due. The missed-output judgement depends on this field; with no scheduled time there is no such thing as "late".</li>
+<li>Owner: who handles this schedule when something goes wrong, and to what level an escalation must be reported.</li>
+<li>Expected output: what each run should produce, where the output lives, and how its actual appearance is verified.</li>
+<li>If any field is missing, the schedule counts as not fully registered: complete the registration first, before reconciliation or judgement is even discussed.</li>
+</ul>
+<h3>3. Judgement Codes and Their Priority Order</h3>
+<p>For each scenario, check in order and take the first code that holds:</p>
+<ol>
+<li>C Recovered and closed: the schedule did fail (a silent disable or missed output), it has now been re-enabled, and every expected output missed during the failure has been made up and verified complete → C; close the case, and this round ends.</li>
+<li>E Silent-disable escalation: the schedule's actual state is disabled, and no approved-pause record can be found (no explicit approval, no disable record, or no revisit date — any one missing counts as none found) → E; escalate to the responsible level at once, record it as a silent-disable event, and do not quietly just switch it back on and call it done.</li>
+<li>M Make-up pending: the schedule is currently in the enabled state, but one or more expected outputs have passed the missed-output threshold (the scheduled time plus a sixty-minute grace period; see Section 4) without appearing, and they have not all been made up and verified → M; inventory the missed outputs one by one, queue the make-up, and keep the case open until it is complete.</li>
+<li>A Approved pause: the schedule's actual state is disabled, and an approved pause is complete in all three parts (explicit approval, a disable record, and a revisit date; see Section 5) → A; track it by its revisit date, with no escalation and no make-up required for output during the pause.</li>
+<li>R Read failure, to investigate: reading the schedule's actual state or run record has failed (insufficient permission, an interface error, records missing to the point that the state cannot be judged), so it cannot be confirmed whether it is enabled or disabled → R; report it as a read failure and retry the read; treat it neither as disabled nor as normal.</li>
+<li>W Running normally: the schedule is in the enabled state, its most recent expected output appeared within the grace period and was verified present, and there is no missed output and no unclosed failure event → W; keep observing on the hourly reconciliation rhythm, with no early alert.</li>
+</ol>
+<h3>4. Evidence Rules</h3>
+<ul>
+<li>State evidence is recognised only from the scheduling system's actual state and run records. An owner saying "it should still be running", or a screen that looks normal, is not evidence.</li>
+<li>The missed-output threshold is written down hard: once the sixty-minute grace period after the scheduled time has fully elapsed and the expected output still has not appeared and cannot be verified present, one missed output is established. Output that has not yet appeared inside the grace period is not judged missed; observe under W.</li>
+<li>Make-up evidence is recognised only from the output itself: every made-up output must be openable for inspection, with content verified to match what it was originally supposed to produce, before it counts as made up; making up only a title, or only an empty shell, does not count.</li>
+<li>Unreadable is not the same as non-existent: a failed read of a state or a record is a read-failure event, reported under R; an unreadable result may never be written up as "no anomaly found", and never as "confirmed disabled" either.</li>
+</ul>
+<h3>5. Honest Limits</h3>
+<ul>
+<li>An approved pause needs all three parts, with none dispensable: explicit approval (who approved it, and which schedule they approved disabling), a disable record (when it was disabled and why), and a revisit date (when it will be reconsidered for restoration). If any one part is missing, judge it under E, silent disable, not under A.</li>
+<li>Output during a pause is not made up: during an approved pause there is supposed to be no output at all, so absence in that period is not missed output and requires no make-up; but if, once the revisit date arrives, the schedule has neither been restored nor had its pause extended, absence from the revisit date onward is judged afresh under the missed-output and silent-disable rules as a separate case.</li>
+<li>Re-enabling does not close a case by itself: after a silent disable is discovered, even if the schedule is re-enabled immediately, as long as missed output has not been fully made up the case stays open under M; only when every missed output has been made up and verified does it close under C.</li>
+<li>Reconciliation reports facts only: what the reconciliation script reports is facts such as "the state is disabled and no approval record can be found" and "a given output did not appear past its grace period"; it judges neither the cause nor the blame. The cause is reported by the owner after receiving the escalation, and the disposition follows the codes.</li>
+</ul>
+<h3>6. Common Mistakes Checklist</h3>
+<ul>
+<li>Reading absence as nothing wrong: after a schedule is switched off there is only silence, the silence gets read as normal, and the gap accumulates for days before an inventory finds it.</li>
+<li>Re-enabling without making up: on discovering a disable, switching the schedule back on and reporting "fixed", while the missed output stays missing forever and the books already show the case closed.</li>
+<li>Disabling without leaving a record: a legitimate maintenance disable with no approval and no revisit date written down looks, afterwards, exactly like a silent disable, and can only be handled as an incident.</li>
+<li>A reconciliation that burns an LLM: waking an AI once an hour to "take a look" at schedule states, so the preventive measure becomes a major usage line itself; reconciliation should be a zero-LLM dead script that notifies a human only when it triggers.</li>
+<li>Writing a failed read up as normal: when a state query fails, reporting "no anomaly this hour" hides a read failure as normality — the most common accomplice a silent failure has.</li>
+</ul>
+<p>Data date: 2026-11-26. Sources: PlAIground Lab's own silent-schedule-disable inspection and recovery records (several daily schedules found to have been silently disabled in full, with no order given and no record kept; after the missed output was inventoried item by item and made up, the rule was settled: a registry, hourly state reconciliation, the disabled state itself as a reportable event, and closure only after missed output is made up; settled 2026-11-16), de-identified.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
