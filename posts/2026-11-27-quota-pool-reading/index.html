@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>撞到 AI 額度上限不用瞎等：先認出你撞的是哪一種池 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="撞到 AI 額度上限不用瞎等：先認出你撞的是哪一種池">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-27-quota-pool-reading/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-27-quota-pool-reading/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-27-quota-pool-reading/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-27-quota-pool-reading/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-27">2026-11-27</time></p>
+    <ul class="post-tags"><li>quota</li><li>workflow</li></ul>
+    <h1 class="post-title">撞到 AI 額度上限不用瞎等：先認出你撞的是哪一種池</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-reset-calendar.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-27-quota-pool-reading.agent.md">中文版</a>・<a href="/posts/2026-11-27-quota-pool-reading.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>「已達上限」四個字，藏著三種完全不同的等待</h2>
+<p>AI 用到一半跳出「已達上限」，多數人的反應是乾等——過一陣子回來試試看，好了是運氣，不好繼續等。但實測下來，各家的額度根本是三種不同的池：有的幾小時就自己回補、有的要等到固定的週期錨點、有的根本不會重置，餘額扣完就是扣完。瞎等的問題不在耐心，在沒先認出自己撞的是哪一種。</p>
+<p>我們把自己正在用的帳號逐池實測了一輪，整理成一頁持續更新的 <a href="https://plaigroundlab.com/ai-quota-reset-calendar/">AI 額度預期重置日曆</a>。這篇先講判讀法：怎麼從介面證據認出池的種類、每一種該怎麼應對；各池的實際重置時間與「在哪裡看你自己的」步驟，都在那一頁。</p>
+<p>先講清楚：本文與日曆頁的所有時間，都是我方帳號在 2026-11-26／27 實讀的樣本（美西鳳凰城時間）。你的錨點取決於你的帳號與訂閱日，請以自己帳號內顯示的為準。</p>
+<h2>第一種：滾動窗——等的是「你用掉的那一段老化」</h2>
+<p>滾動窗的回補跟你的使用逐段對應：某個時刻用掉的份量，過了窗長就逐段回來。它沒有統一的「重置日」，只有不斷滑動的回補。</p>
+<ul>
+<li><strong>Gemini App 的 5 小時窗</strong>：短窗是 5 小時滾動，用多少、5 小時後逐段回補。我方樣本：2026-11-27 03:07 回補。</li>
+<li><strong>Muse 的 7 天窗</strong>：每帳號獨立的 7 天滾動窗。我方 7 個帳號的重置時間散佈在 2026-11-27 16:13 到 12-03 18:56 之間——同一個團隊、每個帳號錨點都不同，這正是滾動窗逐帳號的實證。</li>
+</ul>
+<p>應對：這種池不用「等整池回滿」，把重活排到回補時段之後即可；多帳號時逐帳號讀錨點、錯開排班，不要假設全隊同一天恢復。</p>
+<h2>第二種：固定錨點——整池在固定時點歸零重來</h2>
+<p>錨點型的池不逐段回補，而是在固定日曆時點整池重置：每週某個時刻，或每月某一天。錨點通常跟著訂閱日或開通日走，逐帳號不同——不是全世界統一週一重置。</p>
+<ul>
+<li><strong>Gemini App 的週限</strong>：與 5 小時窗疊成的第二層。我方樣本：2026-12-01 06:07 重置。</li>
+<li><strong>Grok（SuperGrok）</strong>：Imagine 與 Chat 自 2026-11-18 改版後合併成同一個週池。我方樣本：2026-12-02 10:05 重置。</li>
+<li><strong>Flow（AI Pro 點數）</strong>：月點制，每月 1,000 點，錨點跟訂閱日走。我方樣本：餘額 925 點，下次重置 2026-12-22 02:01——錨點日 22 日，與訂閱日一致。</li>
+</ul>
+<p>應對：把錨點寫進行事曆，產能規劃照錨點排；撞到這種池，等幾小時不會有任何回補，硬試只是浪費注意力。</p>
+<h2>第三種：餘額制——沒有重置，只有入帳與儲值</h2>
+<p>餘額型的池只扣不補：「重置時間」這個欄位不存在。餘額回升只有兩條路：週期入帳，或自己儲值。</p>
+<ul>
+<li><strong>Gemini API（AI Studio）</strong>：預付耗用，沒有週期重置；所謂月額度只是帳單月的成本統計。我方樣本：預付 US$5.00、當月成本 US$3.97、餘 US$1.03。</li>
+<li><strong>Colab（AI Pro）</strong>：運算單位是餘額制，燒多少扣多少；AI Pro 每月入帳 200 單位，入帳日跟訂閱日走。我方樣本：餘額 148.96 單位，訂閱日為每月 9 日，下一批入帳推算 2026-12-09。注意 Colab 介面不顯示入帳日——那是推算值，要回訂閱管理頁對自己的訂閱日核對，不能當確定欄位引用。</li>
+</ul>
+<p>應對：監控的是餘額與入帳日，不是重置倒數；餘額低於工作所需就提前儲值或等入帳，不要排一場註定中途斷糧的長工。</p>
+<h2>三個最常見的誤判</h2>
+<ol>
+<li><strong>拿 A 池的時間推 B 池</strong>：Grok Bot 是與 SuperGrok 分開的獨立週池（我方樣本：已用 74%、2026-11-29 09:44 重置），拿 SuperGrok 的 12-02 去推 Bot 會直接錯三天。同品牌不等於同池。</li>
+<li><strong>把雙層產品當單層</strong>：Gemini App 是 5 小時窗＋週限雙層——短窗回補了不代表週限也回了；兩層都撞上才算全停，先恢復的永遠是短層。</li>
+<li><strong>把推算值當介面事實</strong>：介面沒顯示的日期（例如 Colab 入帳日）只能以訂閱日推算並標明「推算」，寫成確定日期會讓整份排程建立在假錨點上。</li>
+</ol>
+<h2>結語：先分類，再等待</h2>
+<p>撞到上限的第一個動作不是等，是分類：看介面給的是逐段回補（滾動窗）、固定時點（錨點）、還是只有餘額（餘額制）——分類對了，等待時間當場從「不知道」變成「排得進行事曆」。各池的完整機制、我方樣本與查看自己帳號的步驟，見 <a href="https://plaigroundlab.com/ai-quota-reset-calendar/">AI 額度預期重置日曆</a>（每週更新）。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
