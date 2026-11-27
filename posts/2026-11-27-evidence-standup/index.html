@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>自報不等於事實：早會實證制，狀態要附成品時間戳 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="自報不等於事實：早會實證制，狀態要附成品時間戳">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-27-evidence-standup/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-27-evidence-standup/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-27-evidence-standup/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-27-evidence-standup/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-27">2026-11-27</time></p>
+    <ul class="post-tags"><li>workflow</li><li>agent-ops</li></ul>
+    <h1 class="post-title">自報不等於事實：早會實證制，狀態要附成品時間戳</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d22.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-27-evidence-standup.agent.md">中文版</a>・<a href="/posts/2026-11-27-evidence-standup.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>產線多了之後，每天早會要彙整每條線的狀態。最省事的做法，是把每條線自己說的話收一收、排一排，匯成一張表：這條進行中、那條快好了、另一條沒有積壓。問題是，這張表證明的只有一件事——每條線都回了話。它沒有證明任何一條線真的有在動。</p>
+<p>我們實際踩到的坑是：有成品被審查退回之後躺在原地好幾天，期間的狀態彙報照樣寫著進行中，直到有人真的去看工作區的檔案，才發現最新成品的時間戳停在退件那一天。自報沒有說謊的惡意，它只是不需要證據：嘴上說的進度不會自己留下痕跡，檔案會。</p>
+<p>從那之後，早會的規矩定版成實證制：<strong>每一條產線的狀態彙報，必須附上工作區最新成品的實際時間戳；自報與檔案不符時，以檔案為準。被問到「有沒有積壓」時，不準彙總各線的自報數字，要照佇列、帳本、成品三方實查，給出對得起來的數字。</strong></p>
+<p>這篇的定版處置分三段。附證：<strong>狀態彙報只有三個欄位算數——自報狀態、最新成品名稱、它的檔案時間戳；缺時間戳的彙報不採信，退回補證，不寫進早會紀錄當事實。</strong>以檔為準：<strong>自報進行中、時間戳卻停在四小時以前（白天時段），就是檔案推翻自報，該線照停滯標記處置，不等它下一輪自己承認。</strong>三方盤點：<strong>積壓數字要佇列、帳本、成品三邊對得起來才準報一個數字；三邊不符就並列呈報差異，不準挑一個順眼的寫上去。</strong></p>
+<p>後段把整套判定寫死：六種處置代碼與優先序、附證的欄位規則、新鮮門檻與三方盤點的成立條件。任何人（或任何 AI）拿到一份早會情境，都能給出唯一處置，不靠猜。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 三個機制：附證、以檔為準與三方盤點</h3>
+<ul>
+<li>附證：狀態彙報要附工作區最新成品的名稱與檔案時間戳。時間戳是從檔案系統讀出來的，不是彙報者自己填的印象時間。</li>
+<li>以檔為準：自報與檔案證據衝突時，檔案贏。理由很簡單：檔案時間戳是工作留下的痕跡，自報是對工作的描述；描述錯了改描述，痕跡不會配合描述改。</li>
+<li>三方盤點：積壓這類總量問題，答案要由佇列（等著被做的）、帳本（記錄上未銷帳的）、成品（實際做出的東西）三方交叉得出。任何單一來源——尤其各線自報的彙總——都不構成盤點。</li>
+</ul>
+<h3>2. 彙報必填欄位</h3>
+<ul>
+<li>自報狀態：進行中、已完成、受阻，三選一，寫明是哪一條產線、哪一項工作。</li>
+<li>最新成品：工作區裡該項工作最新成品的名稱；還沒有任何成品就明寫「無成品」，不準留空。</li>
+<li>成品時間戳：最新成品在檔案系統上的實際修改時間，讀取後原樣附上。</li>
+<li>缺任一欄位，該份彙報視為未附證：照 U 退回補證，不採信、不入早會紀錄。</li>
+</ul>
+<h3>3. 判定代碼與優先序</h3>
+<p>對每個情境依序檢查，取第一個成立的代碼：</p>
+<ol>
+<li>F 檔案推翻：自報進行中或已完成，但檔案證據與自報矛盾——最新成品時間戳距彙報時刻已逾四小時（白天時段）、根本沒有成品、或成品時間戳早於該項工作的開始時刻 → F，以檔案為準，該線標記停滯並升級，不採信自報。</li>
+<li>C 完成實證：自報已完成，成品存在、可開啟檢查，且成品時間戳不早於工作開始時刻 → C，採信完成，該項銷帳。</li>
+<li>D 三方不符：被問積壓且已做三方盤點，但佇列、帳本、成品三方的數字對不起來 → D，差異並列呈報並清查，不準報單一數字當事實。</li>
+<li>B 積壓確認：被問積壓且三方盤點數字一致（或差異已清查銷除）→ B，照三方實查數字回報。</li>
+<li>U 未附證：彙報有狀態主張，但缺最新成品名稱或成品時間戳，或積壓數字只彙總各線自報、未做三方盤點 → U，不採信，退回補證或補盤點。</li>
+<li>V 實證相符：附證齊備，自報進行中，最新成品時間戳距彙報時刻在四小時以內，與自報相符 → V，採信，該線照常追蹤。</li>
+</ol>
+<h3>4. 證據規則</h3>
+<ul>
+<li>新鮮門檻寫死：白天時段，最新成品時間戳距彙報時刻四小時以內算新鮮；逾四小時且自報進行中，照 F 判定。這條門檻與停滯哨兵共用，避免兩套標準打架。</li>
+<li>時間戳只認檔案系統讀出值：彙報者手寫的「剛剛有更新」、截圖裡的時間、訊息送出時間，都不是成品時間戳。</li>
+<li>完成只認成品本身：自報完成，要有成品存在且能開啟檢查；只有訊息寫著完成、沒有成品，照 F 判定（自報與「無成品」的事實矛盾）。</li>
+<li>積壓只認三方：佇列、帳本、成品三方都查過，數字才成立；只查兩方或只彙總自報，照 U 退回。</li>
+</ul>
+<h3>5. 誠實邊界</h3>
+<ul>
+<li>夜間不套白天門檻：四小時門檻只適用白天工作時段；夜間與休息時段本就不預期有檔案異動，該時段的時間戳停滯不判 F，照 V 或 U 依附證情形判定。</li>
+<li>受阻要附證據：自報受阻同樣要附最新成品時間戳與受阻原因；受阻不是免附證的狀態，缺欄位照 U。</li>
+<li>三方不符不是錯誤，是訊號：數字對不起來通常代表有工作沒進帳本、或帳本銷了成品沒到。照 D 並列呈報並清查，不準為了讓早會好看而對齊數字。</li>
+<li>彙整者不改證據：早會彙整者只能照原樣呈報各線附的時間戳，不準幫任何一條線補時間戳、換成品名稱或美化狀態；補證只能由該線自己補。</li>
+</ul>
+<h3>6. 常見錯誤清單</h3>
+<ul>
+<li>彙總自報當盤點：把每條線自己說的進度排成一張表就叫早會，那張表證明的是大家都回了話，不是大家都在動。</li>
+<li>時間戳用手寫：彙報裡寫「今天有更新」而沒有附檔案系統讀出的時間戳，等於沒附證，照 U。</li>
+<li>只問不看：被問有沒有積壓時，轉頭去問各線「你們有積壓嗎」，收回來的仍是自報；盤點是自己去查三方，不是再問一次。</li>
+<li>發現不符先等自報修正：檔案已經推翻自報了，還等該線下一輪彙報自己改口；正確處置是當場照 F 標記並升級。</li>
+<li>夜間誤殺：半夜拿白天四小時門檻去掃，整排產線全被標停滯；門檻有適用時段，出了時段不套。</li>
+</ul>
+<p>資料日期：2026-11-27。素材來源：PlAIground Lab 自家生產線停滯防呆紀錄（退件成品躺置多時、自報與檔案不符才被發現，2026-11-18 定版：早會狀態彙報必附成品時間戳、自報與檔案不符以檔案為準、積壓問題照佇列／帳本／成品三方實查給數字），去識別化整理。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
