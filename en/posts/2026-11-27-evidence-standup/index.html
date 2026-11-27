@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Self-Reports Are Not Facts: Evidence-Based Standups, With Product Timestamps Attached — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Self-Reports Are Not Facts: Evidence-Based Standups, With Product Timestamps Attached">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-27-evidence-standup/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-27-evidence-standup/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-27-evidence-standup/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-27-evidence-standup/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-27">2026-11-27</time></p>
+    <ul class="post-tags"><li>workflow</li><li>agent-ops</li></ul>
+    <h1 class="post-title">Self-Reports Are Not Facts: Evidence-Based Standups, With Product Timestamps Attached</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d22.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-27-evidence-standup.en.agent.md">English</a> · <a href="/posts/2026-11-27-evidence-standup.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Part One: The Story, for Humans</h2>
+<p>As the number of production lines grew, the morning standup had to summarise the state of every line. The easiest way to do it is to collect what each line says about itself, arrange it into a table — this one in progress, that one nearly done, another with no backlog — and call it the standup. The trouble is that such a table proves exactly one thing: every line replied. It proves nothing about whether any line actually moved.</p>
+<p>The pit we actually fell into: a product that had been rejected in review lay where it had fallen for days, while the status reports for that line kept saying "in progress" — until somebody finally looked at the files in the workspace and found the newest product's timestamp frozen on the day of the rejection. A self-report carries no malice; it simply requires no evidence. Progress spoken aloud leaves no trace of itself. Files do.</p>
+<p>From then on, the standup rule was fixed as evidence-based reporting: <strong>every line's status report must attach the actual timestamp of the newest product in its workspace; when a self-report and the files disagree, the files win. And when the question is "is there a backlog," nobody may aggregate the lines' self-reported numbers — the answer comes from a three-way check of the queue, the ledger, and the products, and the number reported must be one that reconciles.</strong></p>
+<p>The fixed disposition in this post has three parts. Attach evidence: <strong>only three fields in a status report count — the claimed status, the name of the newest product, and its file timestamp; a report missing the timestamp is not believed, is returned for evidence, and is not written into the standup record as fact.</strong> Files win: <strong>a line that reports itself in progress while its timestamp sits more than four hours in the past (in daytime hours) is a case of the file overriding the self-report — the line is marked stalled and handled accordingly, without waiting for it to confess next round.</strong> Three-way inventory: <strong>a backlog number may be reported only when the queue, the ledger, and the products reconcile; when the three disagree, the discrepancy is reported side by side, and nobody picks the most convenient number to write down.</strong></p>
+<p>Part Two writes the whole judgement down hard: the six disposition codes and their priority order, the required fields for attached evidence, the freshness threshold, and the conditions under which a three-way inventory holds. Anyone (or any AI) handed a standup scenario can reach a single disposition, with no guessing.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>Part Two: The Complete Runbook</h2>
+<h3>1. Three Mechanisms: Attach Evidence, Files Win, Three-Way Inventory</h3>
+<ul>
+<li>Attach evidence: a status report must attach the name of the newest product in the workspace and its file timestamp. The timestamp is read from the filesystem; it is not a time the reporter fills in from impression.</li>
+<li>Files win: when a self-report and the file evidence conflict, the file wins. The reason is simple: a file timestamp is a trace the work itself left behind, while a self-report is a description of the work. When the description is wrong, you fix the description; the trace does not adjust itself to match.</li>
+<li>Three-way inventory: for aggregate questions such as backlog, the answer is derived by crossing three sources — the queue (what is waiting to be done), the ledger (what is recorded as unclosed), and the products (what has actually been produced). No single source — least of all an aggregation of self-reports — constitutes an inventory.</li>
+</ul>
+<h3>2. Required Fields in a Report</h3>
+<ul>
+<li>Claimed status: one of in progress, completed, or blocked, naming which line and which item of work.</li>
+<li>Newest product: the name of the newest product for that item in the workspace; if there is no product at all, write "no product" explicitly — never leave it blank.</li>
+<li>Product timestamp: the actual modification time of the newest product as recorded by the filesystem, attached exactly as read.</li>
+<li>If any field is missing, the report counts as carrying no evidence: it is returned under code U for the evidence to be supplied, is not believed, and does not enter the standup record.</li>
+</ul>
+<h3>3. Disposition Codes and Priority Order</h3>
+<p>For each scenario, check in order and take the first code that applies:</p>
+<ol>
+<li>F — File overrides: the claim is in progress or completed, but the file evidence contradicts it — the newest product's timestamp is more than four hours before the report time (in daytime hours), there is no product at all, or the product's timestamp is earlier than the moment the item of work began → F. The file rules; the line is marked stalled and escalated; the self-report is not believed.</li>
+<li>C — Completion verified: the claim is completed, the product exists and can be opened and inspected, and the product's timestamp is not earlier than the start of the work → C. The completion is believed and the item is closed.</li>
+<li>D — Three-way discrepancy: a backlog question was asked and a three-way inventory was performed, but the queue, the ledger, and the products do not agree → D. The discrepancy is reported side by side and investigated; no single number may be reported as fact.</li>
+<li>B — Backlog confirmed: a backlog question was asked and the three-way figures agree (or the discrepancy has been investigated and cleared) → B. Report the figure from the three-way check.</li>
+<li>U — No evidence attached: the report makes a status claim but is missing the newest product's name or its timestamp, or a backlog figure merely aggregates the lines' self-reports with no three-way inventory performed → U. Not believed; return it for evidence or for the inventory to be done.</li>
+<li>V — Evidence matches: the evidence is complete, the claim is in progress, and the newest product's timestamp is within four hours of the report time, consistent with the claim → V. Believed; the line is tracked as usual.</li>
+</ol>
+<h3>4. Evidence Rules</h3>
+<ul>
+<li>The freshness threshold is written down hard: in daytime hours, a newest-product timestamp within four hours of the report time counts as fresh; beyond four hours with a claim of in progress, judge F. This threshold is shared with the stall sentinel, so two standards never fight.</li>
+<li>A timestamp counts only as read from the filesystem: a hand-written "updated today" in a report, a time visible in a screenshot, and a message's send time are none of them a product timestamp.</li>
+<li>Completion counts only on the product itself: a claim of completion requires a product that exists and can be opened and inspected; a message saying "done" with no product behind it is judged F (the claim contradicts the fact of no product).</li>
+<li>Backlog counts only three-way: queue, ledger, and products must all have been checked before a figure holds; checking only two, or merely aggregating self-reports, is returned under U.</li>
+</ul>
+<h3>5. Honest Boundaries</h3>
+<ul>
+<li>Night hours do not take the daytime threshold: the four-hour threshold applies only in daytime working hours. Overnight and during rest hours no file changes are expected, so a still timestamp in those hours is not judged F; judge V or U according to the attached evidence.</li>
+<li>Blocked claims also need evidence: a claim of blocked must equally attach the newest product's timestamp and the reason for the block. Blocked is not an evidence-exempt status; missing fields are judged U.</li>
+<li>A three-way discrepancy is a signal, not an error: figures that fail to reconcile usually mean work never entered the ledger, or the ledger was closed while the product never arrived. Report the discrepancy side by side under D and investigate; never align the numbers for the sake of a tidy standup.</li>
+<li>The compiler does not edit evidence: whoever compiles the standup may only present each line's attached timestamp exactly as supplied. Nobody may fill in a timestamp, swap a product name, or polish a status on another line's behalf; missing evidence can only be supplied by the line itself.</li>
+</ul>
+<h3>6. Common Mistakes</h3>
+<ul>
+<li>Treating aggregated self-reports as an inventory: arranging every line's own account of its progress into one table and calling it the standup — that table proves everyone replied, not that anyone moved.</li>
+<li>Hand-writing the timestamp: writing "updated today" in a report without attaching the timestamp read from the filesystem is the same as attaching no evidence — judged U.</li>
+<li>Asking instead of looking: when asked whether there is a backlog, turning around and asking each line "do you have a backlog" collects self-reports all over again. An inventory means checking the three sources yourself, not asking a second time.</li>
+<li>Waiting for the self-report to correct itself: once the file has overridden the self-report, waiting for the line to revise its own account next round wastes a day; the correct disposition is to mark F on the spot and escalate.</li>
+<li>Night-time false kills: sweeping with the daytime four-hour threshold in the middle of the night marks every line stalled. The threshold has hours of application; outside them, it does not apply.</li>
+</ul>
+<p>Data date: 2026-11-27. Source material: PlAIground Lab's own production-line stall-prevention records (a rejected product left lying for days, discovered only when the self-report and the files were compared; fixed on 2026-11-18: standup status reports must attach product timestamps, the file wins over the self-report, and backlog questions are answered with figures from a three-way check of the queue, the ledger, and the products), de-identified and reorganised.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
