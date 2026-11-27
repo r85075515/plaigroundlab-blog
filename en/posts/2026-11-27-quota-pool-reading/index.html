@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hit an AI Quota Limit? First Work Out Which Kind of Pool You Hit — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Hit an AI Quota Limit? First Work Out Which Kind of Pool You Hit">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-27-quota-pool-reading/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-27-quota-pool-reading/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-27-quota-pool-reading/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-27-quota-pool-reading/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-27">2026-11-27</time></p>
+    <ul class="post-tags"><li>quota</li><li>workflow</li></ul>
+    <h1 class="post-title">Hit an AI Quota Limit? First Work Out Which Kind of Pool You Hit</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-reset-calendar.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-27-quota-pool-reading.en.agent.md">English</a> · <a href="/posts/2026-11-27-quota-pool-reading.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>One "limit reached" message hides three completely different waits</h2>
+<p>When an AI tool stops mid-task with "limit reached," most people just wait — come back later, try again, and hope. But after measuring the accounts we actually use, pool by pool, it turns out there are three different kinds of pools: some refill on their own within hours, some reset only at a fixed cycle anchor, and some never reset at all — a drained balance is simply drained. The problem with blind waiting is not patience; it is not knowing which kind you hit.</p>
+<p>We measured our own accounts pool by pool and maintain the results as a one-page <a href="https://plaigroundlab.com/ai-quota-reset-calendar/">AI Quota Reset Calendar</a>. This post covers the reading method: how to identify a pool's type from what its interface shows, and what to do for each type. The per-pool reset times and the steps to find your own are on that page.</p>
+<p>One caveat up front: every time quoted here and on the calendar page is a sample from our own accounts, read on 2026-11-26/27 (America/Phoenix). Your anchor depends on your account and subscription day — always go by what your own account shows.</p>
+<h2>Type 1: Rolling windows — you are waiting for your own usage to age out</h2>
+<p>A rolling window refills segment by segment, matched to when you used the quota: whatever you consumed at a given moment returns one window-length later. There is no single "reset day," only continuous refill.</p>
+<ul>
+<li><strong>Gemini App's 5-hour window</strong>: a 5-hour rolling window; usage returns segment by segment five hours later. Our sample: refill at 2026-11-27 03:07.</li>
+<li><strong>Muse's 7-day window</strong>: a per-account 7-day rolling window. Our seven accounts' reset times spread from 2026-11-27 16:13 to 2026-12-03 18:56 — same team, different anchor per account, which is exactly what per-account rolling looks like in practice.</li>
+</ul>
+<p>What to do: don't wait for a full refill — schedule heavy work after the refill segments land. With multiple accounts, read each account's anchor and stagger the work; never assume the whole team recovers on the same day.</p>
+<h2>Type 2: Fixed anchors — the whole pool resets at one calendar point</h2>
+<p>Anchor pools do not refill gradually. The entire pool resets at a fixed calendar point: a set time each week, or a set day each month. The anchor usually follows your subscription or activation day and differs per account — it is not a universal Monday reset.</p>
+<ul>
+<li><strong>Gemini App's weekly limit</strong>: the second layer stacked on the 5-hour window. Our sample: resets 2026-12-01 06:07.</li>
+<li><strong>Grok (SuperGrok)</strong>: since the 2026-11-18 redesign, Imagine and Chat share one weekly pool. Our sample: resets 2026-12-02 10:05.</li>
+<li><strong>Flow (AI Pro credits)</strong>: a monthly credit pool, 1,000 credits a month, anchored to the subscription day. Our sample: balance 925 credits, next reset 2026-12-22 02:01 — anchor day 22, matching the subscription day.</li>
+</ul>
+<p>What to do: put the anchor in your calendar and plan capacity around it. With this type, waiting a few hours refills nothing; retrying only burns attention.</p>
+<h2>Type 3: Balances — there is no reset, only credits and top-ups</h2>
+<p>Balance pools only go down. There is no "reset time" field at all. The balance rises in exactly two ways: periodic credits, or you topping up.</p>
+<ul>
+<li><strong>Gemini API (AI Studio)</strong>: prepaid consumption with no periodic reset; the "monthly quota" is just the billing month's cost tally. Our sample: US$5.00 prepaid, US$3.97 spent this month, US$1.03 left.</li>
+<li><strong>Colab (AI Pro)</strong>: Compute Units are a balance, deducted as you burn; AI Pro credits 200 units a month, on your subscription day. Our sample: balance 148.96 units, subscription day the 9th, next credit estimated 2026-12-09. Note that Colab's interface does not show the credit date — that date is an estimate derived from the subscription day, to be checked in subscription management, never quoted as a displayed fact.</li>
+</ul>
+<p>What to do: monitor the balance and the credit date, not a reset countdown. If the balance can't cover the job, top up or wait for the credit before starting — don't schedule a long run that starves halfway.</p>
+<h2>The three most common misreads</h2>
+<ol>
+<li><strong>Using one pool's time for another</strong>: Grok Bot is a separate weekly pool from SuperGrok (our sample: 74% used, resets 2026-11-29 09:44). Projecting SuperGrok's Dec 2 onto the Bot is wrong by three days. Same brand does not mean same pool.</li>
+<li><strong>Treating a two-layer product as one layer</strong>: Gemini App stacks a 5-hour window and a weekly limit — the short window refilling does not refill the weekly limit. You are fully stopped only when both are exhausted, and the short layer always recovers first.</li>
+<li><strong>Quoting an estimate as an interface fact</strong>: a date the interface doesn't show (like Colab's credit date) can only be estimated from the subscription day and labeled as an estimate. Writing it as a confirmed date builds your whole schedule on a fake anchor.</li>
+</ol>
+<h2>Bottom line: classify first, then wait</h2>
+<p>The first move at a limit is not waiting — it is classifying. Look at what the interface offers: segment-by-segment refill (rolling), a single fixed point (anchor), or only a balance (balance type). Classify correctly and the wait turns from "unknown" into something you can put in a calendar. Full mechanisms, our samples, and how to check your own account for every pool are on the <a href="https://plaigroundlab.com/ai-quota-reset-calendar/">AI Quota Reset Calendar</a>, updated weekly.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
