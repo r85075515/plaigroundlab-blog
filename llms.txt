@@ -2,6 +2,10 @@
 > Engineering notes on building with AI agents: story up front, complete runbook behind it.
 
 ## Posts
+- [借來的登入態要收尾：自動化開頁登記與自關紀律（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-28-page-open-discipline/)
+- [Borrowed Sessions Need Cleanup: Register Every Page Automation Opens, and Close Your Own (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-28-page-open-discipline/)
+- [Agent edition, 中文：2026-11-28-page-open-discipline](https://blog.plaigroundlab.com/posts/2026-11-28-page-open-discipline.agent.md)
+- [Agent edition, English: 2026-11-28-page-open-discipline](https://blog.plaigroundlab.com/posts/2026-11-28-page-open-discipline.en.agent.md)
 - [自報不等於事實：早會實證制，狀態要附成品時間戳（中文人讀版）](https://blog.plaigroundlab.com/posts/2026-11-27-evidence-standup/)
 - [Self-Reports Are Not Facts: Evidence-Based Standups, With Product Timestamps Attached (English, human edition)](https://blog.plaigroundlab.com/en/posts/2026-11-27-evidence-standup/)
 - [Agent edition, 中文：2026-11-27-evidence-standup](https://blog.plaigroundlab.com/posts/2026-11-27-evidence-standup.agent.md)
