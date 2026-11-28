@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Borrowed Sessions Need Cleanup: Register Every Page Automation Opens, and Close Your Own — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="Borrowed Sessions Need Cleanup: Register Every Page Automation Opens, and Close Your Own">
+<link rel="canonical" href="https://blog.plaigroundlab.com/en/posts/2026-11-28-page-open-discipline/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-28-page-open-discipline/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-28-page-open-discipline/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/en/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/en/">Posts</a>
+      <a href="https://plaigroundlab.com">Home</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="/posts/2026-11-28-page-open-discipline/" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="#" aria-pressed="true" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-28">2026-11-28</time></p>
+    <ul class="post-tags"><li>workflow</li><li>agent-ops</li></ul>
+    <h1 class="post-title">Borrowed Sessions Need Cleanup: Register Every Page Automation Opens, and Close Your Own</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d23.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">For your AI: this post ships with a clean-Markdown agent edition — read it and follow along: <a href="/posts/2026-11-28-page-open-discipline.en.agent.md">English</a> · <a href="/posts/2026-11-28-page-open-discipline.agent.md">中文版</a></div>
+    <div class="post-body">
+
+<h2>Part One: The Story, for Humans</h2>
+<p>Several automated work lines shared one signed-in browser, and at first everyone found it convenient: the session was already there, and pages could be opened and used at will. Weeks later, the browser had accumulated a pile of pages nobody would claim — experiment pages, product pages, and lookup pages mixed in among manually used pages, with no way to tell who had opened which page, which page was still in use, and which page would cause trouble if closed. The end state was this: every page looked as if it might be important, so no page dared be closed, and the mixture itself had become the risk.</p>
+<p>The problem was not that someone forgot to close a page. It was that no record was left at the moment the page was opened. No registration means no ownership; no ownership means whoever cleans up can only guess — and guessing wrong closes a page still in use, while guessing right is only luck. This is doubly true for a borrowed session: it is someone else's working session, automation is only borrowing it, and borrowed things get registered and returned when done. That is basic discipline, not advanced engineering.</p>
+<p>From then on, the page-opening discipline was fixed: <strong>automation always opens pages in a dedicated window (in the long run, a dedicated profile), never borrowing a manual window; every page is registered at the moment it is opened, with its window and tab identifiers, its URL, and its task number; when a task ends, whoever opened a page closes it; keeping a page requires its reason and its deadline written down on the spot; and resident pages sit on a separate registered whitelist, protected and never closed automatically.</strong></p>
+<p>The fixed disposition in this post has three parts. Registration: <strong>an automated page with no registration counts as ownership unknown — never close it directly; register it after the fact, establish whose it is, and only then dispose of it.</strong> Self-closing: <strong>a page registered under your own task, with the task ended and no valid retention on file, is closed by whoever opened it, not left for anyone else to clean up.</strong> Protection: <strong>whitelisted resident pages and manual windows are not touched at all, window-wide; retention is allowed, but reason and deadline are both required, and when the deadline passes the page is closed and the expiry reported — nothing lies around indefinitely.</strong></p>
+<p>Part Two writes the whole judgement down hard: the six disposition codes and their priority order, the registration fields, the conditions for a valid retention, and what happens when one expires. Anyone (or any AI) handed a browser-page situation can produce exactly one disposition, with no guessing.</p>
+<p>Other PlAIground Lab products: <a href="https://plaigroundlab.com">Home</a> | <a href="https://ideal-type.plaigroundlab.com">Ideal Type</a> | <a href="https://computequote.plaigroundlab.com/">ComputeQuote</a> | <a href="https://axiom.plaigroundlab.com">Axiom News</a></p>
+<hr />
+<h2>Part Two: The Complete Runbook</h2>
+<h3>1. Three Mechanisms: Dedicated Window, Registration on Opening, and Self-Closing</h3>
+<ul>
+<li>Dedicated window: automation always opens pages in a dedicated window; the long-run form is a dedicated profile, kept completely separate from manually used windows. A manual window is not touched at all, window-wide — even if a page inside it looks automation-opened, no page is picked out of a manual window to close.</li>
+<li>Registration on opening: a page is registered at the very moment it is opened, never reconstructed from memory afterwards. The registration fields are fixed at four: window identifier, tab identifier, URL, and task number. Missing any one of them, the page counts as unregistered.</li>
+<li>Self-closing: when a task ends, whoever opened pages reviews every page registered under that task, one by one. Whoever opened a page closes it; residue is not left for the next user, and not left for a periodic sweep to guess at.</li>
+</ul>
+<h3>2. Retention and the Whitelist</h3>
+<ul>
+<li>Retention: keeping a page after its task has ended requires both a retention reason and a retention deadline added to its registration; only with both present is the retention valid. Before the deadline, the page is kept under retention; the moment the deadline passes, the retention lapses.</li>
+<li>Whitelist: resident pages — such as sign-in pages, mailboxes, documents, and work dashboards — sit on a separate registered whitelist. A whitelisted page is protected: it is never closed automatically, and no retention deadline ever expires it.</li>
+<li>Active-page protection: if the active page of a manual window is whitelisted, that manual window is protected window-wide; manual windows are already untouched window-wide, and this clause simply writes one more layer down explicitly.</li>
+</ul>
+<h3>3. Disposition Codes and Priority Order</h3>
+<p>Check each page situation in order and take the first code that applies:</p>
+<ol>
+<li>P Protected, Do Not Close: the page is on the resident whitelist, or the page sits in a manual window → P, never close it automatically; leave it exactly as it is.</li>
+<li>E Expired Retention: the page has a valid retention registration, but its retention deadline has already passed → E, close the page and report the retention as expired; do not keep it any longer.</li>
+<li>R Retention on Record: the page is registered, its task has ended, and both retention reason and retention deadline are present with the deadline not yet reached → R, keep it under retention until the deadline, with reason and deadline noted on the registration.</li>
+<li>C Close at End: the page is registered under a task, that task has ended, and there is no valid retention (reason or deadline not added, or neither) → C, the task that opened it closes it itself.</li>
+<li>U Unregistered, Awaiting Claim: no complete registration can be found for the page (any of the four fields missing), ownership is unknown, and P does not apply → U, never close it directly; register it after the fact, establish whose it is, then judge it again under this specification.</li>
+<li>W Working, Keep Open: the page has a complete registration, its task has not yet ended, and it is in use → W, keep it open; when the task ends, dispose of it under E, R, or C.</li>
+</ol>
+<h3>4. Evidence Rules</h3>
+<ul>
+<li>Registration counts only when written on the spot: the register written at the moment of opening is the only basis; claiming afterwards from memory that "I opened that page" is not a registration, and the page is handled under U.</li>
+<li>Ownership follows the register: the authority to close a page follows its registration. With no registration there is no basis for "definitely safe to close," however residue-like the page may look.</li>
+<li>Retention counts only with both items present: reason and deadline, missing either one, mean the retention does not stand, and the page is handled under C; a spoken "we will need it later" is not accepted.</li>
+<li>The whitelist counts only as a registered list: a page whose type looks resident but which is not on the registered whitelist enjoys no P protection, and is judged by its registration and task state.</li>
+</ul>
+<h3>5. Honest Boundaries</h3>
+<ul>
+<li>When unsure, do not close: any page whose ownership or purpose cannot be established defaults to U — register it after the fact and find out — never to closing first and asking later. Closing a page that is still in use costs far more than keeping one extra page for a day.</li>
+<li>Sweeps gain no extra authority: a periodic sweep may only dispose of pages whose registration is explicit and which this specification judges C or E; U and P are never within a sweep's closing scope.</li>
+<li>Borrowing is declared in scope: a work line borrowing someone else's session states the borrowing scope and the cleanup method on its task sheet in advance; when the borrowing ends, cleanup is the borrower's responsibility, not the session holder's.</li>
+<li>A dedicated profile is the structural fix: a dedicated window is only the transition; the structural answer to residue is automation moving to a dedicated profile, so manual and automated pages are separate from their very source.</li>
+</ul>
+<h3>6. Common Mistakes</h3>
+<ul>
+<li>Opening without registering: saving ten seconds now makes the whole team guess at every page's ownership at cleanup time — the cost of registration is paid when the page is opened, the cost of guessing is paid back with interest at cleanup.</li>
+<li>Picking pages out of a manual window to close: spotting a page in a manual window that looks automation-opened and closing it in passing; manual windows are untouched window-wide, with no page-picking exceptions.</li>
+<li>Retention with a reason but no deadline: "we will need it later" is not a retention, it is an excuse for indefinite residue; a retention with no deadline is closed under C.</li>
+<li>Closing whatever looks like residue: an old page, an unfamiliar title, a page open for a long time — none of these is evidence of ownership; with no registration to support closing, everything goes through U first.</li>
+<li>Treating the whitelist as a feeling: skipping a page in the review because it "should be resident"; the whitelist is the registered list, and anything off the list is judged as usual.</li>
+</ul>
+<p>Data date: 2026-11-28. Source material: PlAIground Lab's own fixed discipline record for shared-browser page opening (multiple lines sharing one browser, residue and manual pages mixed until no page could safely be closed automatically; fixed on 2026-11-09: dedicated windows for automation, registration at the moment of opening, self-closing when a task ends, whitelist protection for resident pages), de-identified and reorganised.</p>
+<p>© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">What does your ideal type look like?</p>
+  <p class="housead-body">Pick one face over another, round by round, and generate your ideal type.</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">Try Ideal Type →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">Home</a></li><li><a href="https://ideal-type.plaigroundlab.com">Ideal Type</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom News</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. Posts may be quoted and learned from by AI; please credit the source. Commercial resale is prohibited.</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
