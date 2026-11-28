@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>借來的登入態要收尾：自動化開頁登記與自關紀律 — PlAIground Lab AI Geek Blog</title>
+<meta name="description" content="借來的登入態要收尾：自動化開頁登記與自關紀律">
+<link rel="canonical" href="https://blog.plaigroundlab.com/posts/2026-11-28-page-open-discipline/">
+<link rel="alternate" hreflang="zh-Hant" href="https://blog.plaigroundlab.com/posts/2026-11-28-page-open-discipline/">
+<link rel="alternate" hreflang="en" href="https://blog.plaigroundlab.com/en/posts/2026-11-28-page-open-discipline/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="/">PlAIground Lab <span class="brand-sub">AI Geek Blog</span></a>
+    <nav class="brandnav" aria-label="main">
+      <a href="/">文章</a>
+      <a href="https://plaigroundlab.com">入口首頁</a>
+    </nav>
+    <div class="langswitch" role="group" aria-label="language">
+      <a href="#" aria-pressed="true" hreflang="zh-Hant">中文</a><span class="langsep" aria-hidden="true">｜</span><a href="/en/posts/2026-11-28-page-open-discipline/" hreflang="en">EN</a>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-28">2026-11-28</time></p>
+    <ul class="post-tags"><li>workflow</li><li>agent-ops</li></ul>
+    <h1 class="post-title">借來的登入態要收尾：自動化開頁登記與自關紀律</h1>
+    <div class="rule" aria-hidden="true"></div>
+    <img class="post-cover" src="/assets/covers/cover-d23.webp" alt="" width="2048" height="1152">
+    <div class="agent-note">給你的 AI：本篇另備乾淨 Markdown 的 agent 版，讀了就能照著做——<a href="/posts/2026-11-28-page-open-discipline.agent.md">中文版</a>・<a href="/posts/2026-11-28-page-open-discipline.en.agent.md">English</a></div>
+    <div class="post-body">
+
+<h2>前段：寫給人看的故事</h2>
+<p>多條自動化工作線共用同一個已登入的瀏覽器，起初大家都覺得方便：登入態現成、頁面隨開隨用。幾週下來，瀏覽器裡累積了一堆沒人認領的殘留頁——實驗頁、商品頁、查詢頁混在手動使用的頁面中間，分不清哪一頁是誰開的、哪一頁還在用、哪一頁關掉會出事。最後的狀態是：每一頁看起來都可能是重要的，於是沒有一頁敢關，混雜本身變成了風險。</p>
+<p>問題不在有人忘了關頁，而在開頁的那一刻就沒有留下任何紀錄。沒有登記，就沒有所有權；沒有所有權，收尾的人只能猜——猜錯了關掉還在用的頁，猜對了也只是運氣。借來的登入態尤其如此：那是別人的工作階段，自動化只是借用，借東西要登記、要用完歸還，這是基本紀律，不是進階工程。</p>
+<p>從那之後，開頁紀律定版：<strong>自動化一律開在專用視窗（長期改用專用設定檔），不借用手動視窗；開頁當場登記視窗與分頁識別、網址與任務編號；任務結束，自己開的頁自己關；要保留，必須當場寫明理由與期限；常駐頁另有登記白名單，受保護永不自動關閉。</strong></p>
+<p>這篇的定版處置分三段。登記：<strong>沒有登記的自動化頁面視為所有權不明——不準直接關，先補登記、查明歸屬再處置。</strong>自關：<strong>登記在自己名下、任務已結束、又沒有有效留置理由的頁，由開頁者自行關閉，不留給別人收。</strong>保護：<strong>白名單常駐頁與手動視窗整窗不碰；留置可以，但理由與期限缺一不可，期限到了就關閉並回報，不準無限期躺著。</strong></p>
+<p>後段把整套判定寫死：六種處置代碼與優先序、登記欄位、留置成立條件與逾期的處置。任何人（或任何 AI）拿到一個瀏覽器頁面情境，都能給出唯一處置，不靠猜。</p>
+<p>PlAIground Lab 的其他產品：<a href="https://plaigroundlab.com">入口首頁</a>｜<a href="https://ideal-type.plaigroundlab.com">理想型</a>｜<a href="https://computequote.plaigroundlab.com/">ComputeQuote</a>｜<a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></p>
+<hr />
+<h2>以下為完整 runbook</h2>
+<h3>1. 三個機制：專用視窗、開頁登記與自關</h3>
+<ul>
+<li>專用視窗：自動化開頁一律開在專用視窗，長期作法是專用設定檔，與手動使用的視窗完全分家。手動視窗整窗不碰——哪怕裡面混進一頁看似自動化的頁，也不從手動視窗裡挑頁關。</li>
+<li>開頁登記：開頁的當場就登記，不準事後回憶補寫。登記欄位寫死四項：視窗識別、分頁識別、網址、任務編號。缺任一項，該頁視為未登記。</li>
+<li>自關：任務結束時，開頁者盤點自己登記名下的頁面逐頁處置。自己開的自己關，不把殘留留給下一個使用者、也不留給定期掃除去猜。</li>
+</ul>
+<h3>2. 留置與白名單</h3>
+<ul>
+<li>留置：任務結束後仍要保留某頁，必須在登記上加註保留理由與保留期限，兩項齊備才成立有效留置。期限未到，照留置保留；期限一到，留置失效。</li>
+<li>白名單：常駐頁——例如登入頁、信箱、文件與工作後台類頁面——另有登記白名單。白名單頁受保護，永不自動關閉，也不因任何留置期限到期而被關。</li>
+<li>作用中保護：手動視窗的作用中頁面若屬白名單，該手動視窗整窗受保護；本來手動視窗就整窗不碰，這條只是再加一層明文。</li>
+</ul>
+<h3>3. 判定代碼與優先序</h3>
+<p>對每個頁面情境依序檢查，取第一個成立的代碼：</p>
+<ol>
+<li>P 保護不關：頁面在常駐白名單上，或頁面位於手動視窗 → P，永不自動關閉，維持原狀。</li>
+<li>E 逾期留置：頁面有有效留置登記，但保留期限已經屆滿 → E，關閉該頁並回報留置逾期，不再保留。</li>
+<li>R 有據留置：頁面有登記、任務已結束，保留理由與保留期限兩項齊備且期限尚未屆滿 → R，照留置保留至期限，登記上註明理由與期限。</li>
+<li>C 結束自關：頁面有登記在某任務名下、該任務已結束，且沒有有效留置（未加註理由或期限，或兩者皆無） → C，由開頁的任務自行關閉。</li>
+<li>U 未登記待認領：頁面查無完整登記（四欄位缺任一項），所有權不明，且不屬 P → U，不準直接關閉，先補登記、查明歸屬，再照本規格重新判定。</li>
+<li>W 進行中續用：頁面有完整登記、所屬任務尚未結束且正在使用 → W，維持開啟，待任務結束時再照 E／R／C 處置。</li>
+</ol>
+<h3>4. 證據規則</h3>
+<ul>
+<li>登記只認當場紀錄：開頁當場寫下的登記表是唯一依據；事後憑記憶宣稱「那頁是我開的」不算登記，照 U 處理。</li>
+<li>所有權只認登記：關頁的權限跟著登記走。沒有登記，就沒有「確定可以關」的依據，哪怕那頁看起來再像殘留。</li>
+<li>留置只認兩項齊備：理由與期限缺任一項，留置不成立，照 C 處理，不接受口頭說「之後還要用」。</li>
+<li>白名單只認登記名單：頁面類型看起來像常駐頁、但不在白名單登記名單上，不享 P 保護，照其登記與任務狀態判定。</li>
+</ul>
+<h3>5. 誠實邊界</h3>
+<ul>
+<li>不確定就不關：任何一頁的歸屬或用途查不清楚，預設是 U 補登記查明，不是先關了再說。關錯一頁還在用的頁，代價遠高於多留一頁一天。</li>
+<li>掃除不擴權：定期掃除只能處置登記明確、照本規格判定為 C 或 E 的頁；U 與 P 永遠不在掃除的關閉範圍內。</li>
+<li>借用要註明範圍：借用他人登入態的工作線，任務單上要明載借用範圍與收尾方式；借用結束，收尾責任在借用者，不在登入態的持有人。</li>
+<li>專用設定檔是長期解：專用視窗只是過渡；殘留問題的結構解是自動化改用專用設定檔，讓手動與自動化的頁面從來源就分家。</li>
+</ul>
+<h3>6. 常見錯誤清單</h3>
+<ul>
+<li>開頁不登記：當下省十秒，收尾時全隊陪著猜每一頁的歸屬——登記的成本在開頁時付，猜的成本在收尾時連本帶利還。</li>
+<li>從手動視窗挑頁關：看到手動視窗裡有一頁像自動化開的就順手關掉；手動視窗整窗不碰，沒有例外挑頁。</li>
+<li>留置只寫理由不寫期限：「之後還要用」不是留置，是無限期殘留的藉口；沒有期限的留置照 C 關閉。</li>
+<li>看起來像殘留就關：頁面舊、標題陌生、開了很久，都不是所有權證據；沒有登記佐證，一律先照 U。</li>
+<li>把白名單當感覺：覺得某頁「應該是常駐的」就跳過盤點；白名單以登記名單為準，名單外照常判定。</li>
+</ul>
+<p>資料日期：2026-11-28。素材來源：PlAIground Lab 自家共用瀏覽器開頁紀律定版紀錄（多線共用同一瀏覽器、殘留頁與手動頁混雜至無頁可安全自動關閉，2026-11-09 定版：自動化專用視窗、開頁當場登記、任務結束自關、常駐頁白名單保護），去識別化整理。</p>
+<p>© PlAIground Lab。本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+    </div>
+  </article>
+  
+<aside class="housead" aria-label="PlAIground Lab">
+  <p class="housead-kicker">PlAIground Lab</p>
+  <p class="housead-title">你的理想型，長什麼樣子？</p>
+  <p class="housead-body">兩張臉選一張，一輪一輪選出你的偏好，最後生成你的理想型。</p>
+  <a class="housead-link" href="https://ideal-type.plaigroundlab.com?utm_source=blog&utm_medium=housead&utm_campaign=ideal-type">去玩理想型 →</a>
+</aside>
+</main>
+
+<footer class="familybar">
+  <div class="familybar-inner">
+    <p class="family-title">PlAIground Lab</p>
+    <ul class="family-list"><li><a href="https://plaigroundlab.com">入口首頁</a></li><li><a href="https://ideal-type.plaigroundlab.com">理想型</a></li><li><a href="https://computequote.plaigroundlab.com/">ComputeQuote</a></li><li><a href="https://axiom.plaigroundlab.com">Axiom 新聞</a></li><li><a href="https://blog.plaigroundlab.com">AI Geek Blog</a></li></ul>
+    <p class="family-note">© PlAIground Lab. 本站文章歡迎引用與 AI 學習，轉載請註明出處，禁止商業轉售。</p>
+  </div>
+</footer>
+<script>
+try {
+  var l = localStorage.getItem('blog-lang');
+  var cur = document.documentElement.lang;
+  if (l && l !== cur) {
+    var a = document.querySelector('.langswitch a[hreflang="' + l + '"]:not([href="#"])');
+    if (a && sessionStorage.getItem('blog-lang-applied') !== '1') {
+      sessionStorage.setItem('blog-lang-applied', '1');
+      location.replace(a.href);
+    }
+  }
+  document.querySelectorAll('.langswitch a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var h = a.getAttribute('hreflang');
+      if (h) localStorage.setItem('blog-lang', h);
+    });
+  });
+} catch (e) {}
+</script>
+</body>
+</html>
